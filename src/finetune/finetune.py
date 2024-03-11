@@ -44,14 +44,12 @@ def fine_tune_model(model_name, data, save_directory):
         logging_steps=10,
     )
 
-    # Define trainer
     trainer = Trainer(
         model=model,
         args=training_args,
         train_dataset=dataset,
     )
 
-    # Train the model
     trainer.train()
 
     # Save the model to the specified directory
@@ -66,13 +64,13 @@ def upload_to_s3(bucket_name, model_name, directory):
 
 def main():
     # Load your data
-    df = pd.read_csv('your_data.csv')  # Replace with your DataFrame loading method
+    df = pd.read_csv('records_text.csv')  
 
     models = ["all-MiniLM-L6-v2", "all-mpnet-base-v2", "paraphrase-multilingual-MiniLM-L12-v2"]
-    bucket_name = 'your-s3-bucket-name'  # Replace with your S3 bucket name
+    bucket_name = 'semanticsearch-nlp-finetune'  
 
     for model in models:
-        save_directory = f"models/{model}"
+        save_directory = f"models/{model}-finetune"
         os.makedirs(save_directory, exist_ok=True)
         fine_tune_model(model, df, save_directory)
         upload_to_s3(bucket_name, model, save_directory)
