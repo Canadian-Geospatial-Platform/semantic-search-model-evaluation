@@ -6,6 +6,8 @@ import boto3
 import os
 import logging
 from torch.utils.data import Dataset
+import awswrangler as wr
+
 
 # Set up logging
 logger = logging.getLogger(__name__)
