@@ -12,9 +12,12 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 class TextDataset(Dataset):
-    def __init__(self, tokenizer, texts, max_length=128):
+    def __init__(self, tokenizer, texts=None, max_length=256):
         self.tokenizer = tokenizer
-        self.texts = texts
+        if texts is not None:
+            self.texts = texts
+        else:
+            self.__load()
         self.max_length = max_length
 
     def __getitem__(self, idx):
@@ -24,6 +27,21 @@ class TextDataset(Dataset):
 
     def __len__(self):
         return len(self.texts)
+
+    def __load(self):
+        BUCKET_NAME = 'webpresence-geocore-geojson-to-parquet-dev'
+        self.df = wr.s3.read_parquet(f"s3://{BUCKET_NAME}/", dataset=True)
+        selected_columns = ['features_properties_title_en','features_properties_description_en','features_properties_keywords_en']
+        self.df = self.df[selected_columns]
+        self.df['text'] = self.df.apply(lambda x: f"{x['features_properties_title_en']}\n{x['features_properties_description_en']}\nkeywords:{x['features_properties_keywords_en']}",axis=1 )
+        self.df['text'] = self.df.apply(lambda x:self.__preprocess(x))
+        self.texts = self.df['text'].tolist() #needs high mem
+
+    
+    def __preprocess(self,text):
+        return text
+
+
 
 
 def fine_tune_model(model_name, data, save_directory):
