@@ -13,6 +13,13 @@ from torch.utils.data import Dataset
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
+
+def preprocess_records_into_text(df):
+        selected_columns = ['features_properties_title_en','features_properties_description_en','features_properties_keywords_en']
+        df = df[selected_columns]
+        return df.apply(lambda x: f"{x['features_properties_title_en']}\n{x['features_properties_description_en']}\nkeywords:{x['features_properties_keywords_en']}",axis=1 )
+        
+
 class TextDataset(Dataset):
     def __init__(self, tokenizer,df=None, texts=None, max_length=256):
         self.tokenizer = tokenizer
