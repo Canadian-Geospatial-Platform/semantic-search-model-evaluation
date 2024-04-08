@@ -17,8 +17,13 @@ source /path/to/your/env/bin/activate
 # Install dependencies
 pip install -r requirements.txt
 
-# Run the Python script
-python finetune.py
+# Variables for command-line arguments
+DATA_PATH="$1"
+SAVE_DIRECTORY="$2"
+NUM_TRAIN_EPOCHS="$3"
+
+# Run the Python script with command-line arguments
+python finetune.py "$DATA_PATH" "$SAVE_DIRECTORY" "$NUM_TRAIN_EPOCHS"
 
 # Deactivate Python environment
 deactivate

@@ -6,6 +6,7 @@ from transformers import AutoModelForSequenceClassification, AutoTokenizer, Trai
 import os
 import logging
 from torch.utils.data import Dataset
+import sys
 # import awswrangler as wr
 
 
@@ -65,7 +66,7 @@ class MyDataset(Dataset):
 
 
 
-def fine_tune_model(model_name, save_directory):
+def fine_tune_model(model_name, save_directory, data_path, num_train_epochs):
     logger.info(f"Starting fine-tuning for {model_name}")
 
     tokenizer = AutoTokenizer.from_pretrained(model_name)
@@ -73,7 +74,7 @@ def fine_tune_model(model_name, save_directory):
 
 
     # Tokenize the data
-    df = pd.read_parquet('records.parquet')
+    df = pd.read_parquet(data_path)
     dataset = TextDataset(tokenizer, df=df)
     texts = dataset.texts[:100]
     encodings = tokenizer(texts, truncation=True, padding='max_length', max_length=512, return_tensors='pt')
@@ -86,7 +87,7 @@ def fine_tune_model(model_name, save_directory):
     # Define training arguments
     training_args = TrainingArguments(
         output_dir='./results', 
-        num_train_epochs=3,
+        num_train_epochs=num_train_epochs,
         per_device_train_batch_size=16,
         save_steps=10_000,
         save_total_limit=2,
@@ -111,16 +112,23 @@ def fine_tune_model(model_name, save_directory):
 #         logger.info(f"Uploaded {filename} to S3 bucket {bucket_name}/{model_name}/{filename}")
 
 def main():
-    # Load your data
-    # df = pd.read_csv('records_text.csv')  
+    # Check if all required arguments are passed
+    if len(sys.argv) != 4:
+        print("Usage: python finetune.py [data_path] [save_directory] [num_train_epochs]")
+        sys.exit(1)
 
-    models = ["sentence-transformers/all-MiniLM-L6-v2", "all-mpnet-base-v2", "paraphrase-multilingual-MiniLM-L12-v2"][:1]
+    # Retrieve arguments
+    data_path = sys.argv[1]
+    save_directory_base = sys.argv[2]
+    num_train_epochs = int(sys.argv[3])
+
+    models = ["sentence-transformers/all-MiniLM-L6-v2", "all-mpnet-base-v2", "paraphrase-multilingual-MiniLM-L12-v2"]
     bucket_name = 'semanticsearch-nlp-finetune'  
 
     for model in models:
-        save_directory = f"models/{model}-finetune"
+        save_directory = f"{save_directory_base}/{model}-finetune"
         os.makedirs(save_directory, exist_ok=True)
-        fine_tune_model(model, save_directory)
+        fine_tune_model(model, save_directory, data_path, num_train_epochs)
         # upload_to_s3(bucket_name, model, save_directory)
 
 if __name__ == "__main__":
