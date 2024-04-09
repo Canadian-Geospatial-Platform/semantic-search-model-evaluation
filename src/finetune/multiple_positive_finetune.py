@@ -8,6 +8,15 @@ from torch.utils.data import DataLoader
 import logging
 import sys
 
+logging.basicConfig(level=logging.INFO, 
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                    handlers=[
+                        logging.FileHandler("training_log_MPR.log"),
+                        logging.StreamHandler()
+                    ])
+logger = logging.getLogger(__name__)
+
+
 nltk.download('punkt')
 
 # Configure logging to file and console
@@ -44,6 +53,7 @@ def dataframe_to_sentence_pairs(df, text_column):
 
 def callback(score, epoch, steps):
     logger.info(f"Epoch: {epoch}, Steps: {steps}, Loss: {score}")
+
     
 def main(path_to_training_data, model_save_directory, num_train_epochs):
     df = pd.read_parquet(path_to_training_data)
@@ -53,7 +63,7 @@ def main(path_to_training_data, model_save_directory, num_train_epochs):
     
     model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
     
-    examples = [InputExample(texts=pair["set"]) for pair in sentence_pairs[:128]]
+    examples = [InputExample(texts=pair["set"]) for pair in sentence_pairs]
     
     # DataLoader
     train_dataloader = DataLoader(examples, batch_size=32, shuffle=True)
@@ -63,9 +73,10 @@ def main(path_to_training_data, model_save_directory, num_train_epochs):
     
     model.fit(train_objectives=[(train_dataloader, train_loss)], 
               epochs=num_train_epochs, 
-              warmup_steps=100, 
+              warmup_steps=10, 
+              evaluation_steps=10,
               output_path=model_save_directory, 
-              callback=callback)
+              callback=[callback])
 
 # Example usage
 if __name__ == '__main__':

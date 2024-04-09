@@ -9,6 +9,13 @@ from torch.utils.data import Dataset
 import sys
 # import awswrangler as wr
 
+logging.basicConfig(level=logging.INFO, 
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                    handlers=[
+                        logging.FileHandler("training_log_finetune.log"),
+                        logging.StreamHandler()
+                    ])
+logger = logging.getLogger(__name__)
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -76,7 +83,7 @@ def fine_tune_model(model_name, save_directory, data_path, num_train_epochs):
     # Tokenize the data
     df = pd.read_parquet(data_path)
     dataset = TextDataset(tokenizer, df=df)
-    texts = dataset.texts[:100]
+    texts = dataset.texts
     encodings = tokenizer(texts, truncation=True, padding='max_length', max_length=512, return_tensors='pt')
     
     dataset = MyDataset(encodings)
@@ -91,6 +98,7 @@ def fine_tune_model(model_name, save_directory, data_path, num_train_epochs):
         per_device_train_batch_size=16,
         save_steps=10_000,
         save_total_limit=2,
+        logging_steps=4
     )
     
     trainer = Trainer(
@@ -122,7 +130,7 @@ def main():
     save_directory_base = sys.argv[2]
     num_train_epochs = int(sys.argv[3])
 
-    models = ["sentence-transformers/all-MiniLM-L6-v2", "all-mpnet-base-v2", "paraphrase-multilingual-MiniLM-L12-v2"]
+    models = ["sentence-transformers/all-MiniLM-L6-v2", "all-mpnet-base-v2", "paraphrase-multilingual-MiniLM-L12-v2"][:1]
     bucket_name = 'semanticsearch-nlp-finetune'  
 
     for model in models:
