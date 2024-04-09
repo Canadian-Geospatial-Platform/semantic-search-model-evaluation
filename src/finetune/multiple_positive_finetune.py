@@ -6,6 +6,7 @@ import nltk
 from sentence_transformers import SentenceTransformer, InputExample, losses
 from torch.utils.data import DataLoader
 import logging
+import sys
 
 nltk.download('punkt')
 
@@ -44,18 +45,14 @@ def dataframe_to_sentence_pairs(df, text_column):
 def callback(score, epoch, steps):
     logger.info(f"Epoch: {epoch}, Steps: {steps}, Loss: {score}")
     
-# Example usage
-if __name__ == '__main__':
-    df = pd.read_parquet('records.parquet')
+def main(path_to_training_data, model_save_directory, num_train_epochs):
+    df = pd.read_parquet(path_to_training_data)
     df['text'] = preprocess_records_into_text(df)
     
     sentence_pairs = dataframe_to_sentence_pairs(df, 'text')
     
-    
-    # Load the pre-trained model
     model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
     
-    # Convert the sentence pairs to InputExample format
     examples = [InputExample(texts=pair["set"]) for pair in sentence_pairs[:128]]
     
     # DataLoader
@@ -64,5 +61,20 @@ if __name__ == '__main__':
     # MultipleNegativesRankingLoss
     train_loss = losses.MultipleNegativesRankingLoss(model)
     
-    # Training
-    model.fit(train_objectives=[(train_dataloader, train_loss)], epochs=4, warmup_steps=100, output_path='model_output_MNR', callback=callback)
+    model.fit(train_objectives=[(train_dataloader, train_loss)], 
+              epochs=num_train_epochs, 
+              warmup_steps=100, 
+              output_path=model_save_directory, 
+              callback=callback)
+
+# Example usage
+if __name__ == '__main__':
+    if len(sys.argv) != 4:
+        print("Usage: python script_name.py [path_to_training_data] [model_save_directory] [num_train_epochs]")
+        sys.exit(1)
+    
+    path_to_training_data = sys.argv[1]
+    model_save_directory = sys.argv[2]
+    num_train_epochs = int(sys.argv[3])
+
+    main(path_to_training_data, model_save_directory, num_train_epochs)
