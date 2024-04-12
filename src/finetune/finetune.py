@@ -1,7 +1,7 @@
 
 import pandas as pd
 import torch
-from transformers import AutoModelForSequenceClassification, AutoTokenizer, Trainer, TrainingArguments,AutoModelForCausalLM,DataCollatorForLanguageModeling
+from transformers import AutoModelForSequenceClassification,AutoModelForMaskedLM, AutoTokenizer, Trainer, TrainingArguments,AutoModelForCausalLM,DataCollatorForLanguageModeling
 # import boto3
 import os
 import logging
@@ -70,7 +70,10 @@ def fine_tune_model(model_name, save_directory, data_path, num_train_epochs):
     logger.info(f"Starting fine-tuning for {model_name}")
 
     tokenizer = AutoTokenizer.from_pretrained(model_name)
-    model = AutoModelForCausalLM.from_pretrained(model_name)
+    try:
+        model = AutoModelForCausalLM.from_pretrained(model_name)
+    except:
+        model = AutoModelForMaskedLM.from_pretrained(model_name)
 
 
     # Tokenize the data
@@ -122,7 +125,7 @@ def main():
     save_directory_base = sys.argv[2]
     num_train_epochs = int(sys.argv[3])
 
-    models = ["sentence-transformers/all-MiniLM-L6-v2", "all-mpnet-base-v2", "paraphrase-multilingual-MiniLM-L12-v2"]
+    models = ["sentence-transformers/all-MiniLM-L6-v2", "sentence-transformers/all-mpnet-base-v2", "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"]
     bucket_name = 'semanticsearch-nlp-finetune'  
 
     for model in models:
