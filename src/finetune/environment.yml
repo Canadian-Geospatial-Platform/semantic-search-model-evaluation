@@ -1,0 +1,12 @@
+name: pytorch-py39
+channels:
+  - conda-forge
+dependencies:
+  - accelerate==0.28.0
+  - nltk==3.8.1
+  - pandas==2.2.1
+  - pyarrow==15.0.2
+  - sentence-transformers==2.6.1
+  - pip
+  - pip:
+    - -r requirements.txt
