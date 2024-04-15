@@ -45,13 +45,13 @@ def dataframe_to_sentence_pairs(df, text_column):
 def callback(score, epoch, steps):
     logger.info(f"Epoch: {epoch}, Steps: {steps}, Loss: {score}")
     
-def main(path_to_training_data, model_save_directory, num_train_epochs):
+def main(path_to_training_data, model_save_directory, num_train_epochs,model_name):
     df = pd.read_parquet(path_to_training_data)
     df['text'] = preprocess_records_into_text(df)
     
     sentence_pairs = dataframe_to_sentence_pairs(df, 'text')
     
-    model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+    model = SentenceTransformer(model_name)
     
     examples = [InputExample(texts=pair["set"]) for pair in sentence_pairs[:128]]
     
@@ -64,7 +64,7 @@ def main(path_to_training_data, model_save_directory, num_train_epochs):
     model.fit(train_objectives=[(train_dataloader, train_loss)], 
               epochs=num_train_epochs, 
               warmup_steps=100, 
-              output_path=model_save_directory, 
+              output_path=f"{model_save_directory}/{model_name.split('/')[-1]}", 
               callback=callback)
 
 # Example usage
@@ -76,5 +76,8 @@ if __name__ == '__main__':
     path_to_training_data = sys.argv[1]
     model_save_directory = sys.argv[2]
     num_train_epochs = int(sys.argv[3])
+    models = ["sentence-transformers/all-MiniLM-L6-v2", "sentence-transformers/all-mpnet-base-v2", "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"]
 
-    main(path_to_training_data, model_save_directory, num_train_epochs)
+    for model in models:
+        main(path_to_training_data, model_save_directory, num_train_epochs,model)
+        
