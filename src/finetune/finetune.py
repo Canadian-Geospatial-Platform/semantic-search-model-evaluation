@@ -114,6 +114,33 @@ def fine_tune_model(model_name, save_directory, data_path, num_train_epochs):
 #         s3.upload_file(os.path.join(directory, filename), bucket_name, f"{model_name}/{filename}")
 #         logger.info(f"Uploaded {filename} to S3 bucket {bucket_name}/{model_name}/{filename}")
 
+
+def load_saved_model(model_directory):
+    """
+    Loads a model from the specified directory.
+
+    Args:
+        model_directory (str): The directory where the model is saved.
+
+    Returns:
+        model: The loaded pre-trained model.
+    """
+    try:
+        # Try to load as a causal language model
+        model = AutoModelForCausalLM.from_pretrained(model_directory)
+        logger.info(f"Loaded Causal Language Model from {model_directory}")
+    except Exception as e1:
+        try:
+            # If the first attempt fails, try to load as a masked language model
+            model = AutoModelForMaskedLM.from_pretrained(model_directory)
+            logger.info(f"Loaded Masked Language Model from {model_directory}")
+        except Exception as e2:
+            logger.error(f"Failed to load model: {e1}, then {e2}")
+            return None
+
+    return model
+
+
 def main():
     # Check if all required arguments are passed
     if len(sys.argv) != 4:
