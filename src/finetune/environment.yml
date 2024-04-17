@@ -1,4 +1,4 @@
-name: pytorch-py39
+name: semantic-finetune
 channels:
   - conda-forge
 dependencies:
@@ -9,4 +9,4 @@ dependencies:
   - sentence-transformers==2.6.1
   - pip
   - pip:
-    - -r requirements.txt
+    - -r requirement.txt
