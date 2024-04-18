@@ -1,0 +1,25 @@
+Device:  cuda
+{'loss': 5.0588, 'grad_norm': 3.2778308391571045, 'learning_rate': 4.518304431599229e-05, 'epoch': 1.45}
+{'loss': 3.5709, 'grad_norm': 3.1824066638946533, 'learning_rate': 4.036608863198459e-05, 'epoch': 2.89}
+{'loss': 3.1114, 'grad_norm': 3.1327133178710938, 'learning_rate': 3.554913294797688e-05, 'epoch': 4.34}
+{'loss': 2.8842, 'grad_norm': 3.0405385494232178, 'learning_rate': 3.073217726396917e-05, 'epoch': 5.78}
+{'loss': 2.6911, 'grad_norm': 3.177882671356201, 'learning_rate': 2.5915221579961463e-05, 'epoch': 7.23}
+{'loss': 2.5592, 'grad_norm': 3.750567674636841, 'learning_rate': 2.1098265895953757e-05, 'epoch': 8.67}
+{'loss': 2.4752, 'grad_norm': 3.183195114135742, 'learning_rate': 1.628131021194605e-05, 'epoch': 10.12}
+{'loss': 2.4156, 'grad_norm': 3.5697150230407715, 'learning_rate': 1.1464354527938344e-05, 'epoch': 11.56}
+{'loss': 2.3677, 'grad_norm': 2.8471646308898926, 'learning_rate': 6.647398843930635e-06, 'epoch': 13.01}
+{'loss': 2.3474, 'grad_norm': 3.6679487228393555, 'learning_rate': 1.8304431599229288e-06, 'epoch': 14.45}
+{'train_runtime': 845.984, 'train_samples_per_second': 196.032, 'train_steps_per_second': 6.135, 'train_loss': 2.9249320204777067, 'epoch': 15.0}
+Device:  cuda
+{'loss': 3.0494, 'grad_norm': 4.7062530517578125, 'learning_rate': 4.518304431599229e-05, 'epoch': 1.45}
+{'loss': 1.5349, 'grad_norm': 3.898540735244751, 'learning_rate': 4.036608863198459e-05, 'epoch': 2.89}
+{'loss': 1.2521, 'grad_norm': 3.5240442752838135, 'learning_rate': 3.554913294797688e-05, 'epoch': 4.34}
+{'loss': 1.1223, 'grad_norm': 3.091015577316284, 'learning_rate': 3.073217726396917e-05, 'epoch': 5.78}
+{'loss': 1.0167, 'grad_norm': 3.2419862747192383, 'learning_rate': 2.5915221579961463e-05, 'epoch': 7.23}
+{'loss': 0.9415, 'grad_norm': 3.8869309425354004, 'learning_rate': 2.1098265895953757e-05, 'epoch': 8.67}
+{'loss': 0.8937, 'grad_norm': 3.3385019302368164, 'learning_rate': 1.628131021194605e-05, 'epoch': 10.12}
+{'loss': 0.8634, 'grad_norm': 3.741629123687744, 'learning_rate': 1.1464354527938344e-05, 'epoch': 11.56}
+{'loss': 0.8305, 'grad_norm': 3.0812273025512695, 'learning_rate': 6.647398843930635e-06, 'epoch': 13.01}
+{'loss': 0.8159, 'grad_norm': 3.695233106613159, 'learning_rate': 1.8304431599229288e-06, 'epoch': 14.45}
+{'train_runtime': 2501.2363, 'train_samples_per_second': 66.303, 'train_steps_per_second': 2.075, 'train_loss': 1.216569342640783, 'epoch': 15.0}
+Device:  cuda
