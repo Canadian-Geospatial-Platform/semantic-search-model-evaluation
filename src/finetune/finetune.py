@@ -68,7 +68,10 @@ class MyDataset(Dataset):
 
 def fine_tune_model(model_name, save_directory, data_path, num_train_epochs):
     logger.info(f"Starting fine-tuning for {model_name}")
-
+    # Check if CUDA is available
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print("Device: ", device)
+    
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     try:
         model = AutoModelForCausalLM.from_pretrained(model_name)
@@ -79,8 +82,9 @@ def fine_tune_model(model_name, save_directory, data_path, num_train_epochs):
     # Tokenize the data
     df = pd.read_parquet(data_path)
     dataset = TextDataset(tokenizer, df=df)
-    texts = dataset.texts[:100]
-    encodings = tokenizer(texts, truncation=True, padding='max_length', max_length=512, return_tensors='pt')
+    #texts = dataset.texts[:100]
+    texts = dataset.texts
+    encodings = tokenizer(texts, truncation=True, padding='max_length', max_length=512, return_tensors='pt').to(device)
     
     dataset = MyDataset(encodings)
 
@@ -97,7 +101,7 @@ def fine_tune_model(model_name, save_directory, data_path, num_train_epochs):
     )
     
     trainer = Trainer(
-        model=model,
+        model=model.to(device) if torch.cuda.is_available() else model,  # Move the model to CUDA if available
         args=training_args,
         data_collator=data_collator,
         train_dataset=dataset,
