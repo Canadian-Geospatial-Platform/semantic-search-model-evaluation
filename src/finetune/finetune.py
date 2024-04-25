@@ -1,7 +1,7 @@
 
 import pandas as pd
 import torch
-from transformers import AutoModelForSequenceClassification, AutoTokenizer, Trainer, TrainingArguments,AutoModelForCausalLM,DataCollatorForLanguageModeling
+from transformers import AutoModelForSequenceClassification,AutoModelForMaskedLM, AutoTokenizer, Trainer, TrainingArguments,AutoModelForCausalLM,DataCollatorForLanguageModeling
 # import boto3
 import os
 import logging
@@ -68,16 +68,23 @@ class MyDataset(Dataset):
 
 def fine_tune_model(model_name, save_directory, data_path, num_train_epochs):
     logger.info(f"Starting fine-tuning for {model_name}")
-
+    # Check if CUDA is available
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print("Device: ", device)
+    
     tokenizer = AutoTokenizer.from_pretrained(model_name)
-    model = AutoModelForCausalLM.from_pretrained(model_name)
+    try:
+        model = AutoModelForCausalLM.from_pretrained(model_name)
+    except:
+        model = AutoModelForMaskedLM.from_pretrained(model_name)
 
 
     # Tokenize the data
     df = pd.read_parquet(data_path)
     dataset = TextDataset(tokenizer, df=df)
-    texts = dataset.texts[:100]
-    encodings = tokenizer(texts, truncation=True, padding='max_length', max_length=512, return_tensors='pt')
+    #texts = dataset.texts[:100]
+    texts = dataset.texts
+    encodings = tokenizer(texts, truncation=True, padding='max_length', max_length=512, return_tensors='pt').to(device)
     
     dataset = MyDataset(encodings)
 
@@ -94,7 +101,7 @@ def fine_tune_model(model_name, save_directory, data_path, num_train_epochs):
     )
     
     trainer = Trainer(
-        model=model,
+        model=model.to(device) if torch.cuda.is_available() else model,  # Move the model to CUDA if available
         args=training_args,
         data_collator=data_collator,
         train_dataset=dataset,
@@ -111,6 +118,33 @@ def fine_tune_model(model_name, save_directory, data_path, num_train_epochs):
 #         s3.upload_file(os.path.join(directory, filename), bucket_name, f"{model_name}/{filename}")
 #         logger.info(f"Uploaded {filename} to S3 bucket {bucket_name}/{model_name}/{filename}")
 
+
+def load_saved_model(model_directory):
+    """
+    Loads a model from the specified directory.
+
+    Args:
+        model_directory (str): The directory where the model is saved.
+
+    Returns:
+        model: The loaded pre-trained model.
+    """
+    try:
+        # Try to load as a causal language model
+        model = AutoModelForCausalLM.from_pretrained(model_directory)
+        logger.info(f"Loaded Causal Language Model from {model_directory}")
+    except Exception as e1:
+        try:
+            # If the first attempt fails, try to load as a masked language model
+            model = AutoModelForMaskedLM.from_pretrained(model_directory)
+            logger.info(f"Loaded Masked Language Model from {model_directory}")
+        except Exception as e2:
+            logger.error(f"Failed to load model: {e1}, then {e2}")
+            return None
+
+    return model
+
+
 def main():
     # Check if all required arguments are passed
     if len(sys.argv) != 4:
@@ -122,7 +156,7 @@ def main():
     save_directory_base = sys.argv[2]
     num_train_epochs = int(sys.argv[3])
 
-    models = ["sentence-transformers/all-MiniLM-L6-v2", "all-mpnet-base-v2", "paraphrase-multilingual-MiniLM-L12-v2"]
+    models = ["sentence-transformers/all-MiniLM-L6-v2", "sentence-transformers/all-mpnet-base-v2", "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"]
     bucket_name = 'semanticsearch-nlp-finetune'  
 
     for model in models:

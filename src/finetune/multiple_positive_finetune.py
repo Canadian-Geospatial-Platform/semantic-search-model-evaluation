@@ -7,6 +7,7 @@ from sentence_transformers import SentenceTransformer, InputExample, losses
 from torch.utils.data import DataLoader
 import logging
 import sys
+import os 
 
 nltk.download('punkt')
 
@@ -45,15 +46,21 @@ def dataframe_to_sentence_pairs(df, text_column):
 def callback(score, epoch, steps):
     logger.info(f"Epoch: {epoch}, Steps: {steps}, Loss: {score}")
     
-def main(path_to_training_data, model_save_directory, num_train_epochs):
+def main(path_to_training_data, model_save_directory, num_train_epochs,model_name):
+    logger.info(f"Starting fine-tuning for {model_name}")
+    # Check if the model save directory exists, create if not
+    if not os.path.exists(model_save_directory):
+        os.makedirs(model_save_directory)
+        logger.info(f"Created model save directory: {model_save_directory}")
+        
     df = pd.read_parquet(path_to_training_data)
     df['text'] = preprocess_records_into_text(df)
     
     sentence_pairs = dataframe_to_sentence_pairs(df, 'text')
     
-    model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+    model = SentenceTransformer(model_name)
     
-    examples = [InputExample(texts=pair["set"]) for pair in sentence_pairs[:128]]
+    examples = [InputExample(texts=pair["set"]) for pair in sentence_pairs[:]]
     
     # DataLoader
     train_dataloader = DataLoader(examples, batch_size=32, shuffle=True)
@@ -61,11 +68,18 @@ def main(path_to_training_data, model_save_directory, num_train_epochs):
     # MultipleNegativesRankingLoss
     train_loss = losses.MultipleNegativesRankingLoss(model)
     
-    model.fit(train_objectives=[(train_dataloader, train_loss)], 
-              epochs=num_train_epochs, 
-              warmup_steps=100, 
-              output_path=model_save_directory, 
-              callback=callback)
+    # Define output path for model saving
+    model_output_path = os.path.join(model_save_directory, model_name.split('/')[-1])
+    
+    try:
+      model.fit(train_objectives=[(train_dataloader, train_loss)], 
+                epochs=num_train_epochs, 
+                warmup_steps=100, 
+                output_path=model_output_path, 
+                callback=callback)
+      logger.info(f"Finished fine-tuning for {model_name}")
+    except Exception as e:
+        logger.error(f"Error during fine-tuning: {e}")
 
 # Example usage
 if __name__ == '__main__':
@@ -76,5 +90,8 @@ if __name__ == '__main__':
     path_to_training_data = sys.argv[1]
     model_save_directory = sys.argv[2]
     num_train_epochs = int(sys.argv[3])
+    models = ["sentence-transformers/all-MiniLM-L6-v2", "sentence-transformers/all-mpnet-base-v2", "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"]
 
-    main(path_to_training_data, model_save_directory, num_train_epochs)
+    for model in models:
+        main(path_to_training_data, model_save_directory, num_train_epochs,model)
+        
