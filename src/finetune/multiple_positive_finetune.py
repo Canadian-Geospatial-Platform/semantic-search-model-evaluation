@@ -46,7 +46,7 @@ def dataframe_to_sentence_pairs(df, text_column):
 def callback(score, epoch, steps):
     logger.info(f"Epoch: {epoch}, Steps: {steps}, Loss: {score}")
     
-def main(path_to_training_data, model_save_directory, num_train_epochs,model_name):
+def main(path_to_training_data, model_save_directory, num_train_epochs,model_name,add_french=False):
     logger.info(f"Starting fine-tuning for {model_name}")
     # Check if the model save directory exists, create if not
     if not os.path.exists(model_save_directory):
@@ -54,7 +54,7 @@ def main(path_to_training_data, model_save_directory, num_train_epochs,model_nam
         logger.info(f"Created model save directory: {model_save_directory}")
         
     df = pd.read_parquet(path_to_training_data)
-    df['text'] = preprocess_records_into_text(df)
+    df['text'] = preprocess_records_into_text(df,add_french)
     
     sentence_pairs = dataframe_to_sentence_pairs(df, 'text')
     
@@ -93,5 +93,9 @@ if __name__ == '__main__':
     models = ["sentence-transformers/all-MiniLM-L6-v2", "sentence-transformers/all-mpnet-base-v2", "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"]
 
     for model in models:
-        main(path_to_training_data, model_save_directory, num_train_epochs,model)
+        if model=='sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2':
+            main(path_to_training_data, model_save_directory, num_train_epochs,model,add_french=True)
+        else:
+            main(path_to_training_data, model_save_directory, num_train_epochs,model,add_french=False)
+            
         

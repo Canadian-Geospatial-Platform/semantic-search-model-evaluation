@@ -15,19 +15,29 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
-def preprocess_records_into_text(df):
+def preprocess_records_into_text(df,add_french=False):
         selected_columns = ['features_properties_title_en','features_properties_description_en','features_properties_keywords_en']
-        df = df[selected_columns]
-        return df.apply(lambda x: f"{x['features_properties_title_en']}\n{x['features_properties_description_en']}\nkeywords:{x['features_properties_keywords_en']}",axis=1 )
+        dft = df[selected_columns]
+        dft['text'] = dft.apply(lambda x: f"{x['features_properties_title_en']}\n{x['features_properties_description_en']}\nkeywords:{x['features_properties_keywords_en']}",axis=1 )
+        if add_french:    
+            selected_columns = ['features_properties_title_fr','features_properties_description_fr','features_properties_keywords_fr']
+            dftf = df[selected_columns]
+            dftf['text'] = dftf.apply(lambda x: f"{x['features_properties_title_fr']}\n{x['features_properties_description_fr']}\nkeywords:{x['features_properties_keywords_fr']}",axis=1 )
+
+            return pd.concat([dft,dftf])['text']
+        else:
+            return dft['text']
+            
         
 
 class TextDataset(Dataset):
-    def __init__(self, tokenizer,df=None, texts=None, max_length=256):
+    def __init__(self, tokenizer,df=None, texts=None, max_length=256,add_french=False):
         self.tokenizer = tokenizer
+        self.add_french=add_french
         if texts is not None:
             self.texts = texts
         else:
-            self.__load(df)
+            self.__load(df,self.add_french)
         self.max_length = max_length
 
     def __getitem__(self, idx):
@@ -39,15 +49,11 @@ class TextDataset(Dataset):
     def __len__(self):
         return len(self.texts)
 
-    def __load(self,df):
+    def __load(self,df,add_french):
         # BUCKET_NAME = 'webpresence-geocore-geojson-to-parquet-dev'
         # self.df = wr.s3.read_parquet(f"s3://{BUCKET_NAME}/", dataset=True)
-        self.df=df
-        selected_columns = ['features_properties_title_en','features_properties_description_en','features_properties_keywords_en']
-        self.df = self.df[selected_columns]
-        self.df['text'] = self.df.apply(lambda x: f"{x['features_properties_title_en']}\n{x['features_properties_description_en']}\nkeywords:{x['features_properties_keywords_en']}",axis=1 )
-        # self.df['text'] = self.df.apply(lambda x:self.__preprocess(x))
-        self.texts = self.df['text'].tolist() #needs high mem
+        #needs high mem
+        self.texts= preprocess_records_into_text(df,add_french).to_list()
 
     
     def __preprocess(self,text):
@@ -66,7 +72,7 @@ class MyDataset(Dataset):
 
 
 
-def fine_tune_model(model_name, save_directory, data_path, num_train_epochs):
+def fine_tune_model(model_name, save_directory, data_path, num_train_epochs,add_french=False):
     logger.info(f"Starting fine-tuning for {model_name}")
     # Check if CUDA is available
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -81,8 +87,9 @@ def fine_tune_model(model_name, save_directory, data_path, num_train_epochs):
 
     # Tokenize the data
     df = pd.read_parquet(data_path)
-    dataset = TextDataset(tokenizer, df=df)
-    #texts = dataset.texts[:100]
+
+    dataset = TextDataset(tokenizer, df=df,add_french=add_french)
+    # texts = dataset.texts[:100]
     texts = dataset.texts
     encodings = tokenizer(texts, truncation=True, padding='max_length', max_length=512, return_tensors='pt').to(device)
     
@@ -162,8 +169,12 @@ def main():
     for model in models:
         save_directory = f"{save_directory_base}/{model}-finetune"
         os.makedirs(save_directory, exist_ok=True)
-        fine_tune_model(model, save_directory, data_path, num_train_epochs)
+        if model=='sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2':
+            fine_tune_model(model, save_directory, data_path, num_train_epochs,add_french=True)
+        else:
+            fine_tune_model(model, save_directory, data_path, num_train_epochs,add_french=False)
         # upload_to_s3(bucket_name, model, save_directory)
 
 if __name__ == "__main__":
     main()
+
