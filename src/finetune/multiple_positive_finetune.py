@@ -36,9 +36,9 @@ def split_text_middle(text):
     part2 = " ".join(sentences[middle_index:])
     return part1, part2
 
-def dataframe_to_sentence_pairs(df, text_column):
+def dataframe_to_sentence_pairs(texts):
     pairs = []
-    for text in df[text_column]:
+    for text in texts:
         part1, part2 = split_text_middle(text)
         pairs.append({"set": [part1, part2]})
     return pairs
@@ -54,9 +54,9 @@ def main(path_to_training_data, model_save_directory, num_train_epochs,model_nam
         logger.info(f"Created model save directory: {model_save_directory}")
         
     df = pd.read_parquet(path_to_training_data)
-    df['text'] = preprocess_records_into_text(df,add_french)
+    texts = preprocess_records_into_text(df,add_french).to_list()
     
-    sentence_pairs = dataframe_to_sentence_pairs(df, 'text')
+    sentence_pairs = dataframe_to_sentence_pairs(texts)
     
     model = SentenceTransformer(model_name)
     
@@ -93,7 +93,7 @@ if __name__ == '__main__':
     models = ["sentence-transformers/all-MiniLM-L6-v2", "sentence-transformers/all-mpnet-base-v2", "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"]
 
     for model in models:
-        if model=='sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2':
+        if True or model=='sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2':
             main(path_to_training_data, model_save_directory, num_train_epochs,model,add_french=True)
         else:
             main(path_to_training_data, model_save_directory, num_train_epochs,model,add_french=False)
