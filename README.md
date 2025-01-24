@@ -61,3 +61,20 @@ To run the script, you'll need to pass three arguments: the path to the training
 - Adjust the number of epochs according to your model requirements and hardware capabilities.
 
 
+## Model Evaluation Pipeline and Results
+### Evaluation Pipeline 
+We fine-tuned three widely used sentence-transformer (SBERT) models: **all-MiniLM-L6-v2**, **all-mpnet-base-v2**, and **paraphrase-multilingual-MiniLM-L12-v2** using geospatial metadata. To evaluate the performance of these models, we created a benchmark dataset of curated queries and responses, informed by domain expertise. The evaluation pipeline is as follows:
+![Evaluation Pipeline](results/Graphs/Pipeline.png)
+
+### Evaluation Results 
+We selected **Mean Reciprocal Rank at 5 (MRR@5)** and **Accuracy at 5 (ACC@5)** to measure the performance of the models. 
+
+- **MRR@5** measures how well a system ranks the ground truth within the top 5 positions of its search results. Specifically, MRR@5 looks at the position of the first relevant result in the top 5 and computes the reciprocal of that rank. If there is no relevant result in the top 5, the reciprocal rank is zero.
+  
+- **ACC@5** measures the proportion of queries for which at least one relevant result appears within the top 5. It ranges from 0 to 1, where a perfect score of 1 means that, for every query, there is at least one relevant result in the top 5.
+
+The evaluation results are included in the graphs below.  **Model 1** is **all-mpnet-base-v2**, **Model 2** is **all-MiniLM-L6-v2**, and **Model 3** is **paraphrase-multilingual-MiniLM-L12-v2**.
+
+![MRR@5](results/Graphs/MRR.png)
+
+![ACC@5](results/Graphs/ACC.png)
