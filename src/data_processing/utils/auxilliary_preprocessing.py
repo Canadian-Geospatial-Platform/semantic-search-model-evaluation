@@ -2,7 +2,44 @@ import json
 import pandas as pd
 import logging
 
+import glob
+import os
+
 logger = logging.getLogger(__name__)
+
+
+def load_data(input_data_dir: str) -> pd.DataFrame:
+    # obtaining all files saved in bucket
+    files = glob.glob(f"{input_data_dir}/*.parquet")
+
+    if not files:
+        raise ValueError("No parquet files found. Check the input path.")
+
+    logger.info(f"Found {len(files)} parquet files. Loading...")
+    dfs = [pd.read_parquet(f) for f in files]
+    combined_df = pd.concat(dfs, ignore_index=True)
+    
+    logger.info(f"Done. Combined dataset shape: {combined_df.shape}")
+    return combined_df
+
+def save_data(
+    train_df: pd.DataFrame,
+    test_df: pd.DataFrame,
+    output_path: str,
+):
+    logger.info("Saving processed datasets")
+
+    os.makedirs(output_path, exist_ok=True)
+
+    train_file = os.path.join(output_path, "train.parquet")
+    test_file = os.path.join(output_path, "eval.parquet")
+
+    train_df.to_parquet(train_file, index=False)
+    test_df.to_parquet(test_file, index=False)
+
+    logger.info(f"Train data saved to {train_file}")
+    logger.info(f"Test data saved to {test_file}")
+
 
 
 def extract_unique_desc(options_str: str, language: str = 'en') -> list[str]:
@@ -158,3 +195,20 @@ def is_foundational(theme):
         logger.error(f"Error parsing theme: {e}")
         return str(False).lower()
 
+def deduplicate_data(df: pd.DataFrame, subset_columns: list[str]) -> pd.DataFrame:
+    '''
+    Removes duplicate records from the DataFrame based on the specified subset of columns.
+
+    Parameters:
+    - df: pandas DataFrame containing the records.
+    - subset_columns: List of column names to consider independently for identifying duplicates. E.g., ['text_en', 'text_fr'] to drop duplicates based on English and French text columns separately.
+
+    Returns:
+    - pandas DataFrame: DataFrame with duplicates removed based on the specified subset of columns.
+    '''
+    for subset in subset_columns:
+        initial_shape = df.shape
+        df = df.drop_duplicates(subset=subset)
+        logger.info(f"Dropped duplicates based on column {subset}. Initial shape: {initial_shape}, new shape: {df.shape}")
+    
+    return df
