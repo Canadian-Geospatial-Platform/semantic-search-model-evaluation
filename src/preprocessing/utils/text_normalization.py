@@ -1,0 +1,199 @@
+import pandas as pd
+import logging
+import re
+
+logger = logging.getLogger(__name__)
+
+def mask_emails(text: str, mask: str = "[email]") -> str:
+    '''
+    Masks email addresses in the given text with a specified mask.
+
+    Parameters:
+    - text: The input text containing potential email addresses.
+    - mask: The string to replace email addresses with. Default is "[email]".
+
+    Returns:
+    - str: The text with email addresses masked.
+    '''
+    email_pattern = r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'
+    masked_text = re.sub(email_pattern, mask, text)
+    return masked_text
+
+def mask_urls(text: str, mask: str = "[url]") -> str:
+    '''
+    Masks URLs in the given text with a specified mask.
+
+    Parameters:
+    - text: The input text containing potential URLs.
+    - mask: The string to replace URLs with. Default is "[url]".
+
+    Returns:
+    - str: The text with URLs masked.
+    '''
+    # Match http/https or www urls, capture only the FQDN (domain.tld) and drop any path/query/fragment.
+    url_pattern = r"(?:https?:\/\/|www\.|ftp\.)((?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,63})(?:\:[0-9]+)?(?:[\/\?#][^\s()]*)?"
+    masked_text = re.sub(url_pattern, lambda m: m.group(1) + ' ' + mask, text)
+    return masked_text
+
+def convert_tables_to_text(text: str) -> str:
+    '''
+    Converts tables in the given text to a plain text representation.
+
+    Parameters:
+    - text: The input text containing potential tables.
+
+    Returns:
+    - str: The text with tables converted to plain text.
+    '''
+    # remove +--------------+ table borders
+    text = re.sub(r'\s*\+\-+(?:\+\-+)?\+\s*', '\n', text)
+    # print('after table borders:', repr(text))
+
+    # pattern to replace escaped \ within tables e.g. | (word)?\ | becomes | (word)? |
+    text = re.sub(r'\\ *\|', ' |', text)
+    
+    # Clearing empty rows
+    text = re.sub(r'\n\| *(\| *)*\|\n', '\n', text)
+    
+    return text
+
+def remove_section_and_onwards(text: str, section_header: str) -> str:
+    '''
+    Removes the specified section header and all text that follows it in the given text.
+
+    Parameters:
+    - text: The input text containing the section to be removed.
+    - section_header: The header of the section to remove. The function will remove this header and all text that follows it.
+
+    Returns:
+    - str: The text with the specified section and all following text removed.
+    '''
+    pattern = re.escape(section_header) + r'.*'
+    cleaned_text = re.sub(pattern, '', text, flags=re.DOTALL)
+
+    return cleaned_text.strip()
+
+def remove_unnatural_punctuation(text: str) -> str:
+    '''
+    Removes unnatural punctuation from the given text. Unnatural punctuation is defines as multiple consecutive punctuation marks (e.g., "!!!", "??", ",,,") which are often not useful for text processing and can be reduced to a single punctuation mark. Note: consecutive single- or double-quotations or periods are not replaced as they may be intentional (e.g., for indicating inches or ellipses).
+
+    Parameters:
+    - text: The input text containing unnatural punctuation.
+
+    Returns:
+    - str: The text with unnatural punctuation removed.
+    '''
+    # Replace multiple consecutive punctuation marks with a single one (e.g., "!!!" -> "!")
+    cleaned_text = re.sub(r'([,!?;:\-\>\<\#\*\+\=\|"])\1{1,}', r'\1', text)
+
+    return cleaned_text.strip()
+
+def remove_extra_whitespace(text: str) -> str:
+    '''
+    Removes extra whitespace from the given text, including leading, trailing, and multiple consecutive spaces.
+
+    Parameters:
+    - text: The input text containing extra whitespace.
+
+    Returns:
+    - str: The text with extra whitespace removed.
+    '''
+    cleaned_text = re.sub(r' {2,}', ' ', text)
+    cleaned_text = re.sub(r'\n{2,}', '\n', cleaned_text)
+    cleaned_text = re.sub(r' *\n +\n', '\n', cleaned_text)
+
+    return cleaned_text.strip()
+
+def map_symbol_to_word(text: str, symbol: str, word: str) -> str:
+    '''
+    Maps a symbol to a word in the given text.
+
+    Parameters:
+    - text: The input text containing the symbol.
+    - symbol: The symbol to be replaced.
+    - word: The word to replace the symbol with.
+
+    Returns:
+    - str: The text with the symbol replaced by the word.
+    '''
+    if len(symbol) < 1:
+        logger.warning("Symbol to replace is empty. Returning original text.")
+        return text
+    
+    return text.replace(symbol, word)
+
+def apply_fn_and_count_affected_rows(df: pd.DataFrame, column: str, fn, **kwargs) -> pd.DataFrame:
+    '''
+    Applies a given function to a specified column in the DataFrame and counts the number of rows affected by the transformation.
+
+    Parameters:
+    - df: pandas DataFrame containing the records.
+    - column: The name of the column to which the function will be applied.
+    - fn: The function to apply to the specified column.
+    - kwargs: Additional keyword arguments to pass to the function.
+
+    Returns:
+    - pandas DataFrame: DataFrame with the function applied to the specified column.
+    '''
+    initial_values = df[column].copy()
+    df[column] = df[column].apply(fn, **kwargs)
+    affected_rows = (initial_values != df[column]).sum()
+    
+    logger.info(f"Applied function {fn.__name__} to column {column}. Rows affected: {affected_rows}.")
+    
+    return df
+
+def normalize_text_columns(df: pd.DataFrame, text_columns: list[str], language_config: dict) -> pd.DataFrame:
+    '''
+    Normalizes text columns in the DataFrame by converting removing unnatural punctuation, extra whitespace, emails, etc.
+
+    Parameters:
+    - df: pandas DataFrame containing the records.
+    - text_columns: List of column names that contain text to be normalized.
+    - language_config: Dictionary containing language-specific configuration for text normalization.
+        E.g. language_config = {
+            'en': {
+                'section_header_to_remove': "References",
+                'map_symbol_to_word': [('-->', ', then '),
+                                    ('°', ' degrees ')],
+            },
+            'fr': {
+                'section_header_to_remove': "Références",
+                'map_symbol_to_word': [('-->', ', ensuite '),
+                                    ('°', ' degrés ')],
+            }
+        }
+
+    Returns:
+    - pandas DataFrame: DataFrame with normalized text columns.
+    '''
+    logger.info(f"Normalizing text in columns: {text_columns}")
+
+    if not all(col[-3] == '_' and col[-2:] in language_config for col in text_columns):
+        logger.warning("Some columns in text_columns do not end with '_en' or '_fr'. Expanding column list to include all language variants.")
+        # adding _en and _fr variants of any columns that don't already have them
+        expanded_columns = []
+        for col in text_columns:
+            if not (col[-3] == '_' and col[-2:] in language_config):
+                [expanded_columns.append(f"{col}_{lang}") for lang in language_config.keys()]
+            else:
+                expanded_columns.append(col)
+    else:
+        expanded_columns = text_columns
+
+    for col in expanded_columns:
+        new_col = f"{col}_normalized"
+        df[new_col] = df[col]  # create a new column for the normalized text
+        logger.info(f"Normalizing column {col} into new column {new_col}")
+        section_header = language_config[col[-2:]].get('section_header_to_remove')
+        if section_header:
+            df = apply_fn_and_count_affected_rows(df, new_col, remove_section_and_onwards, section_header=section_header)
+        df = apply_fn_and_count_affected_rows(df, new_col, mask_urls)
+        df = apply_fn_and_count_affected_rows(df, new_col, mask_emails)
+        for symbol, word in language_config[col[-2:]].get('map_symbol_to_word', []):
+            df = apply_fn_and_count_affected_rows(df, new_col, map_symbol_to_word, symbol=symbol, word=word)
+        df = apply_fn_and_count_affected_rows(df, new_col, convert_tables_to_text)
+        df = apply_fn_and_count_affected_rows(df, new_col, remove_unnatural_punctuation)
+        df = apply_fn_and_count_affected_rows(df, new_col, remove_extra_whitespace)
+    
+    return df
