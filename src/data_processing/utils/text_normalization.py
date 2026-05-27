@@ -15,6 +15,14 @@ def mask_emails(text: str, mask: str = "[email]") -> str:
     Returns:
     - str: The text with email addresses masked.
     '''
+    if text is None:
+        logger.warning("Invalid text being passed for email masking: {text}. Returning text without masking emails.")
+        return text
+    
+    if not mask:
+        logger.warning("Invalid mask being passed for email masking: {mask}. Returning text without masking emails.")
+        return text
+
     email_pattern = r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'
     masked_text = re.sub(email_pattern, mask, text)
     return masked_text
@@ -30,6 +38,14 @@ def mask_urls(text: str, mask: str = "[url]") -> str:
     Returns:
     - str: The text with URLs masked.
     '''
+    if text is None:
+        logger.warning("Invalid text being passed for url masking: {text}. Returning text without masking urls.")
+        return text
+    
+    if not mask:
+        logger.warning("Invalid mask being passed for url masking: {mask}. Returning text without masking urls.")
+        return text
+    
     # Match http/https or www urls, capture only the FQDN (domain.tld) and drop any path/query/fragment.
     url_pattern = r"(?:https?:\/\/|www\.|ftp\.)((?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,63})(?:\:[0-9]+)?(?:[\/\?#][^\s()]*)?"
     masked_text = re.sub(url_pattern, lambda m: m.group(1) + ' ' + mask, text)
@@ -45,6 +61,10 @@ def convert_tables_to_text(text: str) -> str:
     Returns:
     - str: The text with tables converted to plain text.
     '''
+    if text is None:
+        logger.warning("Invalid text being passed for table conversion: {text}. Skipping.")
+        return text
+    
     # remove +--------------+ table borders
     text = re.sub(r'\s*\+\-+(?:\+\-+)?\+\s*', '\n', text)
     # print('after table borders:', repr(text))
@@ -68,6 +88,14 @@ def remove_section_and_onwards(text: str, section_header: str) -> str:
     Returns:
     - str: The text with the specified section and all following text removed.
     '''
+    if text is None:
+        logger.warning("Invalid text being passed for section removal: {text}. Skipping.")
+        return text
+    
+    if not section_header:
+        logger.warning("Invalid mask being passed for section removal: {section_header}. Skipping.")
+        return text
+    
     pattern = re.escape(section_header) + r'.*'
     cleaned_text = re.sub(pattern, '', text, flags=re.DOTALL)
 
@@ -83,6 +111,10 @@ def remove_unnatural_punctuation(text: str) -> str:
     Returns:
     - str: The text with unnatural punctuation removed.
     '''
+    if text is None:
+        logger.warning("Invalid text being passed for punctuation removal: {text}. Skipping.")
+        return text
+    
     # Replace multiple consecutive punctuation marks with a single one (e.g., "!!!" -> "!")
     cleaned_text = re.sub(r'([,!?;:\-\>\<\#\*\+\=\|"])\1{1,}', r'\1', text)
 
@@ -98,6 +130,10 @@ def remove_extra_whitespace(text: str) -> str:
     Returns:
     - str: The text with extra whitespace removed.
     '''
+    if text is None:
+        logger.warning("Invalid text being passed for whitespace removal: {text}. Skipping.")
+        return text
+    
     cleaned_text = re.sub(r' {2,}', ' ', text)
     cleaned_text = re.sub(r'\n{2,}', '\n', cleaned_text)
     cleaned_text = re.sub(r' *\n +\n', '\n', cleaned_text)
@@ -116,6 +152,10 @@ def map_symbol_to_word(text: str, symbol: str, word: str) -> str:
     Returns:
     - str: The text with the symbol replaced by the word.
     '''
+    if text is None or not symbol or word is None:
+        logger.warning("Invalid text, symbol, or word being passed for symbol-to-word mapping:\nSymbol: {symbol}\nWord: {word}\nText: {text}. Skipping.")
+        return text
+
     if len(symbol) < 1:
         logger.warning("Symbol to replace is empty. Returning original text.")
         return text

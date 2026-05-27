@@ -110,11 +110,15 @@ def extract_org(contact_list):
 
 def choose_org(cited, contact):
     """Use cited if valid, else fallback to contact."""
-    if cited in [None, [], {}, [None], "[]", "[null]"] or (
+    if not(cited in [None, [], {}, [None], "[]", "[null]"] or (
         isinstance(cited, float) and pd.isna(cited)
-    ):
-        return extract_org(contact)
-    return extract_org(cited)
+    )):
+        # try to extract org from cited
+        org_from_cited = extract_org(cited)
+        if org_from_cited.get("en") or org_from_cited.get("fr"):
+            return org_from_cited
+    # found no valid info in cited, fallback to contact
+    return extract_org(contact)
 
 def is_mappable_from_str(options_str):
     '''
@@ -156,7 +160,7 @@ def map_topics_to_themes(topic_list, theme_bins):
         logging.warning(f"Expected topic_list to be a list, got {type(topic_list)} with value: {topic_list}. Returning empty theme list.")
         return []
 
-    topics = [t.lower() for t in topic_list]
+    topics = [t.lower().strip() for t in topic_list]
     themes = {theme_bins.get(topic) for topic in topics if theme_bins.get(topic)}
 
     # Convert everything to strings explicitly (just in case)
@@ -197,7 +201,7 @@ def is_foundational(theme):
 
 def deduplicate_data(df: pd.DataFrame, subset_columns: list[str]) -> pd.DataFrame:
     '''
-    Removes duplicate records from the DataFrame based on the specified subset of columns.
+    Removes duplicate records from the DataFrame based on any of the specified subset of columns.
 
     Parameters:
     - df: pandas DataFrame containing the records.

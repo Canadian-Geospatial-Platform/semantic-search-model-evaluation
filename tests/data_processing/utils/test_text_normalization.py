@@ -3,14 +3,25 @@ from unittest.mock import patch, MagicMock
 import pandas as pd
 import logging
 
-from data_processing.utils.text_normalization import mask_emails, mask_urls, normalize_text_columns, remove_section_and_onwards, remove_unnatural_punctuation, remove_extra_whitespace, map_symbol_to_word, apply_fn_and_count_affected_rows, convert_tables_to_text, preprocess_records_into_text
+from src.data_processing.utils.text_normalization import (
+    mask_emails,
+    mask_urls,
+    normalize_text_columns,
+    remove_section_and_onwards,
+    remove_unnatural_punctuation,
+    remove_extra_whitespace,
+    map_symbol_to_word,
+    apply_fn_and_count_affected_rows,
+    convert_tables_to_text,
+    preprocess_records_into_text,
+)
 
 class TestMaskEmails:
     def test_mask_single_email(self):
         text = "Contact us at support@example.com for more info."
         assert mask_emails(text) == "Contact us at [email] for more info."
 
-    def test_mask_nested_email(self):
+    def test_mask_email_in_brackets(self):
         text = "Contact us at [support.help@example.ca] for more info."
         assert mask_emails(text) == "Contact us at [[email]] for more info."
 
@@ -18,6 +29,10 @@ class TestMaskEmails:
         text = "alice@example.com, bob.smith+news@sub.domain.co.uk are contacts"
         expected = "[email], [email] are contacts"
         assert mask_emails(text) == expected
+    
+    def test_change_mask_for_emails(self):
+        text = "Contact us at support@example.com for more info."
+        assert mask_emails(text, 'EMAIL') == "Contact us at EMAIL for more info."
 
     def test_mask_no_email(self):
         text = "There is no email address here."
@@ -26,10 +41,19 @@ class TestMaskEmails:
     def test_mask_empty_string(self):
         assert mask_emails("") == ""
 
-    def test_mask_email_like_but_invalid(self):
+    def test_no_mask_for_incomplete_emails(self):
         # Incomplete emails, should not be matched
         text = "user@localhost or user@domain"
         assert mask_emails(text) == text
+    
+    def test_no_mask_with_invalid_text(self):
+        text = None
+        assert mask_emails(text) == None
+    
+    def test_no_mask_with_invalid_mask(self):
+        text = "This is normal text"
+        invalid_mask = None
+        assert mask_emails(text, invalid_mask) == text
 
 class TestMaskUrls:
     def test_mask_single_url(self):
@@ -52,6 +76,10 @@ class TestMaskUrls:
     def test_mask_url_in_brackets(self):
         text = "Our site (https://www.example.com/something-else/other) has more info."
         assert mask_urls(text) == "Our site (www.example.com [url]) has more info."
+    
+    def test_change_mask_for_url(self):
+        text = "Visit our website at https://www.example.com for details."
+        assert mask_urls(text, 'URL_MASK') == "Visit our website at www.example.com URL_MASK for details."
 
     def test_mask_no_url(self):
         text = "This text does not contain any URLs."
@@ -64,6 +92,15 @@ class TestMaskUrls:
         # Incomplete URLs, should not be matched
         text = "Visit ww.example or http:/example.com"
         assert mask_urls(text) == text
+    
+    def test_no_mask_with_invalid_text(self):
+        text = None
+        assert mask_urls(text) == None
+    
+    def test_no_mask_with_invalid_mask(self):
+        text = "This is normal text"
+        invalid_mask = None
+        assert mask_urls(text, invalid_mask) == text
 
 class TestRemoveSectionAndOnwards:
     def test_remove_section_at_middle(self):
@@ -71,7 +108,7 @@ class TestRemoveSectionAndOnwards:
         expected = "This is the introduction."
         assert remove_section_and_onwards(text, "Section:") == expected
 
-    def test_remove_section_not_found(self):
+    def test_keep_section_when_header_not_found(self):
         text = "This is some text without the section header."
         assert remove_section_and_onwards(text, "Section:") == text
 
@@ -84,6 +121,19 @@ class TestRemoveSectionAndOnwards:
         text = "This is the introduction. Section: This is the section to remove."
         expected = "This is the introduction."
         assert remove_section_and_onwards(text, "Section:") == expected
+    
+    def test_skip_with_empty_text(self):
+        text = ""
+        assert remove_section_and_onwards(text, "Section") == ""
+    
+    def test_skip_with_invalid_text(self):
+        text = None
+        assert remove_section_and_onwards(text, "Section") == None
+    
+    def test_skip_with_invalid_section_header(self):
+        text = "This is normal text"
+        invalid_header = None
+        assert remove_section_and_onwards(text, invalid_header) == text
 
 class TestRemoveUnnaturalPunctuation:
     def test_remove_consecutive_punctuation(self):
@@ -98,7 +148,7 @@ class TestRemoveUnnaturalPunctuation:
     def test_empty_string(self):
         assert remove_unnatural_punctuation("") == ""
 
-    def test_only_unnatural_punctuation(self):
+    def test_remove_only_unnatural_punctuation(self):
         text = "!!!???##***-----++=="
         assert remove_unnatural_punctuation(text) == "!?#*-+="
 
@@ -106,8 +156,16 @@ class TestRemoveUnnaturalPunctuation:
         text = "The provided text is '' (empty)... Does it work? \"Yes\", it does."
         assert remove_unnatural_punctuation(text) == text
 
+    def test_skip_with_empty_text(self):
+        text = ""
+        assert remove_unnatural_punctuation(text) == text
+
+    def test_skip_with_invalid_text(self):
+        text = None
+        assert remove_unnatural_punctuation(text) == text
+
 class TestRemoveExtraWhitespace:
-    def test_remove_extra_whitespace(self):
+    def test_remove_consecutive_whitespace(self):
         text = "This   is a   test.\n\nNew line with  extra spaces.\tTabs too."
         expected = "This is a test.\nNew line with extra spaces.\tTabs too."
         assert remove_extra_whitespace(text) == expected
@@ -116,8 +174,13 @@ class TestRemoveExtraWhitespace:
         text = "   This is a test with leading and trailing whitespace.   "
         expected = "This is a test with leading and trailing whitespace."
         assert remove_extra_whitespace(text) == expected
+    
+    def test_remove_trailing_space_with_newline(self):
+        text = "Hello   \n"
+        expected = "Hello"
+        assert remove_extra_whitespace(text) == expected
 
-    def test_no_extra_whitespace(self):
+    def test_with_no_extra_whitespace(self):
         text = "This is a normal sentence."
         assert remove_extra_whitespace(text) == text
 
@@ -127,6 +190,14 @@ class TestRemoveExtraWhitespace:
     def test_only_whitespace(self):
         text = "   \n\t  "
         assert remove_extra_whitespace(text) == ""
+
+    def test_skip_with_empty_text(self):
+        text = ""
+        assert remove_extra_whitespace(text) == ""
+
+    def test_skip_with_invalid_text(self):
+        text = None
+        assert remove_extra_whitespace(text) == text
 
 class TestMapSymbolToWord:
     def test_map_symbol_to_word(self):
@@ -145,18 +216,35 @@ class TestMapSymbolToWord:
         text = "This text should remain unchanged."
         assert map_symbol_to_word(text, "", "word") == text
 
+    def test_empty_word(self):
+        text = "I have $2 apples and $3 oranges."
+        expected = "I have 2 apples and 3 oranges."
+        assert map_symbol_to_word(text, "$", "") == expected
+
     def test_map_multiple_occurrences(self):
         text = "Item is #5. Item B is #3."
         expected = "Item is number 5. Item B is number 3."
         assert map_symbol_to_word(text, "#", "number ") == expected
+
+    def test_with_invalid_symbol(self):
+        text = "Item is #5. Item B is #3."
+        assert map_symbol_to_word(text, None, "number ") == text
+
+    def test_with_invalid_word(self):
+        text = "Item is #5. Item B is #3."
+        assert map_symbol_to_word(text, "#", None) == text
+
+    def test_with_invalid_text(self):
+        text = None
+        assert map_symbol_to_word(text, "#", "Number") == text
 
 class TestApplyFnAndCountAffectedRows:
     @pytest.fixture
     def sample_df(self):
         data = {
             'text': [
+                "This is a sentence.",
                 "This has WORD_TO_REPLACE.",
-                "This is another sentence."
             ]
         }
         return pd.DataFrame(data)
@@ -176,8 +264,8 @@ class TestApplyFnAndCountAffectedRows:
             return x.replace('WORD_TO_REPLACE', 'REPLACED')
 
         result_df = apply_fn_and_count_affected_rows(sample_df, 'text', fn)
-        assert result_df.loc[0, 'text'] == "This has REPLACED."
-        assert result_df.loc[1, 'text'] == "This is another sentence."
+        assert result_df.loc[0, 'text'] == "This is a sentence."
+        assert result_df.loc[1, 'text'] == "This has REPLACED."
     
     def test_no_affected_rows(self, sample_df_no_match):
         def fn(x):
@@ -192,8 +280,8 @@ class TestApplyFnAndCountAffectedRows:
             return x.replace('WORD_TO_REPLACE', replacement)
 
         result_df = apply_fn_and_count_affected_rows(sample_df, 'text', fn, replacement='REPLACED2')
-        assert result_df.loc[0, 'text'] == "This has REPLACED2."
-        assert result_df.loc[1, 'text'] == "This is another sentence."
+        assert result_df.loc[0, 'text'] == "This is a sentence."
+        assert result_df.loc[1, 'text'] == "This has REPLACED2."
 
 class TestConvertTablesToText:
     def test_convert_tables_to_text(self):
@@ -216,9 +304,19 @@ class TestConvertTablesToText:
         text_without_table = 'This is some text without a table.'
 
         result = convert_tables_to_text(text_without_table)
-        expected = 'This is some text without a table.'
+        assert result == text_without_table
+    
+    def test_invalid_text(self):
+        invalid_text = None
 
-        assert result == expected
+        result = convert_tables_to_text(invalid_text)
+        assert result == invalid_text
+    
+    def test_heading_in_text(self):
+        text_without_table = 'This is some text without a table.\n-----------However--------\nThis test does include a subheading surrounded by -'
+
+        result = convert_tables_to_text(text_without_table)
+        assert result == text_without_table
 
 class TestNormalizeTextColumns:    
     @pytest.fixture
