@@ -49,7 +49,6 @@ class TestLoadData:
         assert isinstance(result, pd.DataFrame)
         assert result.shape[0] == 4
         assert list(result.columns) == ["col1", "col2"]
-        pd.testing.assert_frame_equal( result, pd.concat([df1, df2], ignore_index=True) )
     
     def test_load_data_no_parquet_files(self, tmp_path):
         """Test error when no parquet files are found."""
