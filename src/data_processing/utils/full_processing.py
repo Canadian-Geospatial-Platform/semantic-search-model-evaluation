@@ -28,7 +28,7 @@ def process_data_text_only(df: pd.DataFrame) -> pd.DataFrame:
             },
             'fr': {
                 'section_header_to_remove': "Références",
-                'map_symbol_to_word': [('->', ' ensuite '),
+                'map_symbol_to_word': [('->', ' puis '),
                                     ('°', ' degrés '),
                                     ('\\n', '\n')],
             }
