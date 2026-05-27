@@ -6,7 +6,7 @@ import tempfile
 from pathlib import Path
 import logging
 
-from src.data_processing.utils.auxilliary_preprocessing import (
+from data_processing.utils.auxilliary_preprocessing import (
     load_data,
     save_data,
     extract_unique_desc,
