@@ -53,13 +53,9 @@ def run_sagemaker_job(job_name, role, region, input_s3, output_s3, data_split_ra
 
     outputs = [
             ProcessingOutput(
-                source="/opt/ml/processing/output/train",
-                destination=f"s3://{output_s3}/semantic_search_se/data/"
+                source="/opt/ml/processing/output/",
+                destination=f"s3://{output_s3}/semantic_search_se/data/" if not keep_eocollections else f"s3://{output_s3}/semantic_search_se/data/with_eocollections/"
             ),
-            ProcessingOutput(
-                source="/opt/ml/processing/output/test",
-                destination=f"s3://{output_s3}/semantic_search_se/data/"
-            )
         ]
     
     arguments = [
