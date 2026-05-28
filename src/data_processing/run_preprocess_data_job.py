@@ -53,20 +53,18 @@ def run_sagemaker_job(job_name, role, region, input_s3, output_s3, data_split_ra
 
     outputs = [
             ProcessingOutput(
-                source="/opt/ml/processing/train",
+                source="/opt/ml/processing/output/train",
                 destination=f"s3://{output_s3}/semantic_search_se/data/"
             ),
             ProcessingOutput(
-                source="/opt/ml/processing/test",
+                source="/opt/ml/processing/output/test",
                 destination=f"s3://{output_s3}/semantic_search_se/data/"
             )
         ]
     
     arguments = [
             "--input-data-dir", "/opt/ml/processing/input/data",
-            "--output-train", "/opt/ml/processing/train",
-            "--output-test", "/opt/ml/processing/test",
-            "--region", region,
+            "--output-path", "/opt/ml/processing/output/",
             "--train-test-split-ratio", str(data_split_ratio),
             "--random-state", "42",]
     if keep_eocollections:
