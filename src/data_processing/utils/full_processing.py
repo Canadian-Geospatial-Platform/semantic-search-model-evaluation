@@ -37,10 +37,10 @@ def process_data_text_only(df: pd.DataFrame) -> pd.DataFrame:
     logger.info("Successfully completed text normalization")
 
     logger.info("Creating text for semantic search by concatenating title, description, and keywords")
-    df['text_en'] = preprocess_records_into_text(df, languages=['en'])
-    df['text_fr'] = preprocess_records_into_text(df, languages=['fr'])
-    df['text_seq'] = preprocess_records_into_text(df, languages=['en', 'fr'], output_format='sequential')
-    df['text_para'] = preprocess_records_into_text(df, languages=['en', 'fr'], output_format='parallel')
+    df['text_en'] = preprocess_records_into_text(df, languages=['en'], keyword_prefixes=['keywords:'])
+    df['text_fr'] = preprocess_records_into_text(df, languages=['fr'], keyword_prefixes=['mots-clés associés:'])
+    df['text_seq'] = preprocess_records_into_text(df, languages=['en', 'fr'], keyword_prefixes=['keywords:', 'mots-clés associés:'], output_format='sequential')
+    df['text_para'] = preprocess_records_into_text(df, languages=['en', 'fr'], keyword_prefixes=['keywords:', 'mots-clés associés:'], output_format='parallel')
     logger.info("Successfully created text features")
 
     logger.info(f"Removing missing values in text features. Current shape before dropping: {df.shape}")
