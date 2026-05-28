@@ -20,11 +20,11 @@ def parse_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--job_name", type=str, required=True)
-    parser.add_argument("--region", type=str, required=True, description="AWS region for processing job")
-    parser.add_argument("--input_s3_bucket", type=str, required=True, description="Name of S3 bucket where input data is stored")
-    parser.add_argument("--output_s3_bucket", type=str, required=True, description="Name of S3 bucket where processed output data will be stored")
-    parser.add_argument("--data_split_ratio", type=float, default=0.1, description="AWS region for processing job")
-    parser.add_argument("--keep_eoCollections", action="store_true", default=False, description="Name of S3 bucket where processed output data will be stored")
+    parser.add_argument("--region", type=str, required=True, help="AWS region for processing job")
+    parser.add_argument("--input_s3_bucket", type=str, required=True, help="Name of S3 bucket where input data is stored")
+    parser.add_argument("--output_s3_bucket", type=str, required=True, help="Name of S3 bucket where processed output data will be stored")
+    parser.add_argument("--data_split_ratio", type=float, default=0.1, help="AWS region for processing job")
+    parser.add_argument("--keep_eoCollections", action="store_true", default=False, help="Name of S3 bucket where processed output data will be stored")
 
     return parser.parse_args()
 
