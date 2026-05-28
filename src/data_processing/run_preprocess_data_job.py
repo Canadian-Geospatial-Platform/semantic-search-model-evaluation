@@ -14,12 +14,12 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger(__name__)
-env = os.getenv("ENVIRON") # i.e. dev, stage
+env = os.getenv("ENVIRONMENT") # i.e. dev, stage
 
 def parse_args():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("--job_name", type=str, required=True)
+    parser.add_argument("--job_name", type=str, required=True, help="Name of Sagemaker preprocessing job")
     parser.add_argument("--region", type=str, required=True, help="AWS region for processing job")
     parser.add_argument("--input_s3_bucket", type=str, required=True, help="Name of S3 bucket where input data is stored")
     parser.add_argument("--output_s3_bucket", type=str, required=True, help="Name of S3 bucket where processed output data will be stored")
@@ -62,22 +62,22 @@ def run_sagemaker_job(job_name, role, region, input_s3, output_s3, data_split_ra
             )
         ]
     
-    arguements = [
+    arguments = [
             "--input-data-dir", "/opt/ml/processing/input/data",
             "--output-train", "/opt/ml/processing/train",
             "--output-test", "/opt/ml/processing/test",
             "--region", region,
-            "--train-test-split-ratio", data_split_ratio,
+            "--train-test-split-ratio", str(data_split_ratio),
             "--random-state", "42",]
     if keep_eocollections:
-        arguements.append("--keep-eoCollections")
+        arguments.append("--keep-eoCollections")
     
     processor.run(
         code="preprocess_data.py",
         source_dir="src/data_processing",
         inputs=inputs,
         outputs=outputs,
-        arguments=arguements,
+        arguments=arguments,
         job_name=job_name,
         wait=True, # for notebook to wait until process finishes to stop running cell
         logs=True # display logs
