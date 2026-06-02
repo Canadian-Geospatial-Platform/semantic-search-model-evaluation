@@ -97,14 +97,12 @@ def main(args):
     eval_dataset = subset_extraction(eval_df, anchor_col, doc_col, mix_languages=args.data_mix_languages)
 
     train_sampler = InterleaveBatchSampler(
-        len_en=train_df.shape[0],
-        len_fr=train_df.shape[0],
+        lenngths=[train_df.shape[0]]*2 if args.data_mix_languages else [train_df.shape[0]],
         batch_size=args.train_batch_size, # sampler batch size must match training batch size to avoid multiple query-doc pairs sharing the same document in same batch (will be falsely treated as a negative in MNRL)
         mode=args.data_sampler_mode  # "interleave"or "sequential"
     )
 
     train_dataloader = DataLoader(train_dataset, batch_size=args.train_batch_size, sampler=train_sampler)
-    eval_dataloader = DataLoader(eval_dataset, batch_size=args.train_batch_size, sampler=train_sampler)
     logger.info(f"Training dataset prepared with {len(train_dataset)} samples and batch size {args.train_batch_size}. Sampler mode: {args.data_sampler_mode}")
 
     logger.info(f"Initializing model: {args.model_name}")
@@ -131,7 +129,6 @@ def main(args):
         per_device_train_batch_size = args.train_batch_size,
         per_device_eval_batch_size = args.train_batch_size,
         learning_rate=args.train_learning_rate,
-        batch_sampler=BatchSamplers.NO_DUPLICATES, #just in case
 
         logging_first_step=True,
         logging_strategy="epoch",
@@ -143,7 +140,7 @@ def main(args):
     )
 
     logger.info("Extracting queries, corpus, and relevant documents for evaluation")
-    eval_queries, eval_corpus, eval_rel_docs = extract_query_coprus_relevant_docs(eval_df, anchor_col, doc_col)
+    eval_queries, eval_corpus, eval_rel_docs = extract_query_coprus_relevant_docs(eval_dataset, anchor_col, doc_col)
     ir_evaluator = InformationRetrievalEvaluator(
         queries=eval_queries, #q_id:query
         corpus=eval_corpus, #d_id:doc
@@ -155,8 +152,7 @@ def main(args):
     trainer = SentenceTransformerTrainer(
         model=model,
         args=args,
-        train_dataloader=train_dataloader,
-        eval_dataloader=eval_dataloader,
+        train_dataloader=train_dataloader
         loss=train_loss,
         evaluator=ir_evaluator,
     )

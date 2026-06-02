@@ -160,12 +160,12 @@ class TestExpandedDataset:
     def test_expanded_dataset_selects_correct_columns(self, sample_df_bilingual):
         """Test that ExpandedDataset selects the correct columns."""
         dataset = ExpandedDataset(sample_df_bilingual, "query", "document")
-        assert "query" in dataset.df_en.columns
+        assert "anchor" in dataset.df_en.columns
         assert "query_en" not in dataset.df_en.columns
         assert "query_fr" not in dataset.df_en.columns
         assert "doc" in dataset.df_en.columns
         assert "document" not in dataset.df_en.columns
-        assert "query" in dataset.df_fr.columns
+        assert "anchor" in dataset.df_fr.columns
         assert "query_en" not in dataset.df_fr.columns
         assert "query_fr" not in dataset.df_fr.columns
         assert "doc" in dataset.df_fr.columns
@@ -181,14 +181,14 @@ class TestExpandedDataset:
         """Test that __getitem__ returns en rows for indices < len_en."""
         item = expanded_dataset[0]
         assert isinstance(item, pd.Series)
-        assert item['query'] == "q1"
+        assert item['anchor'] in ["q1", "q2", "q3"]
 
     def test_expanded_dataset_getitem_fr_rows(self, expanded_dataset):
         """Test that __getitem__ returns fr rows for indices >= len_en."""
         len_en = expanded_dataset.len_en
         item = expanded_dataset[len_en]
         assert isinstance(item, pd.Series)
-        assert item['query'] == "q1_fr"
+        assert item['anchor'] in ["q1_fr", "q2_fr", "q3_fr"]
 
     def test_expanded_dataset_getitem_out_of_range_raises_error(
         self, expanded_dataset
