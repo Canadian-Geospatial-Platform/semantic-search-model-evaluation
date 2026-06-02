@@ -13,7 +13,7 @@ import logging
 import sys
 import os 
 
-from data_loader import subset_extraction, InterleaveBatchSampler
+from data_loader import extract_dataset, InterleaveBatchSampler
 from torch.utils.data import DataLoader
 
 # Configure logging to file and console
@@ -38,8 +38,7 @@ def parse_args():
     parser.add_argument("--data_anchor_column", type=str, default='features_properties_title_en', help="Name of the column to use as anchor (query) in training. Default is 'features_properties_title_en'")
     parser.add_argument("--data_doc_column", type=str, default='text_en', help="Name of the column to use as document in training. Default is 'features_properties_text_en'")
     parser.add_argument("--data_mix_languages", action="store_true", default=False, help="If set, uses bilingual document expansion for training by treating the specified anchor column as a prefix and looking for corresponding columns with _en and _fr suffixes. The document column is expected to be the same for both languages. By default, this is set to False.")
-    parser.add_argument("--data_sampler_mode", type=str, default='sequential', help="Mode for sampling batches during training. Default is 'sequential'. Other supported option is 'interleave' which alternates between English and French samples in each batch when mix_languages is enabled.")
-
+    
     # training specific
     parser.add_argument("--train_num_epochs", type=int, default=2, help="Number of training epochs. Default is 2.")
     parser.add_argument("--train_batch_size", type=int, default=32, help="Batch size for training. Default is 32.")
@@ -48,12 +47,14 @@ def parse_args():
 
     return parser.parse_args()
 
-def extract_query_coprus_relevant_docs(df, query_col, doc_col):
+def extract_query_coprus_relevant_docs(dataset, query_col, doc_col):
     queries = {}
     corpus = {}
     relevant_docs = {}
 
-    for idx, row in df.iterrows():
+    
+    for idx in range(len(dataset)):
+        row = dataset[idx]
         q_id = idx
         d_id = idx
 
@@ -93,17 +94,17 @@ def main(args):
     logger.info(f"Using anchor column: {anchor_col} and document column: {doc_col} for training and evaluation.")
 
     logger.info(f"Preparing training dataset with mix_languages set to {args.data_mix_languages}")
-    train_dataset = subset_extraction(train_df, anchor_col, doc_col, mix_languages=args.data_mix_languages)
-    eval_dataset = subset_extraction(eval_df, anchor_col, doc_col, mix_languages=args.data_mix_languages)
+    train_dataset = extract_dataset(train_df, anchor_col, doc_col, mix_languages=args.data_mix_languages)
+    eval_dataset = extract_dataset(eval_df, anchor_col, doc_col, mix_languages=args.data_mix_languages)
 
-    train_sampler = InterleaveBatchSampler(
-        lenngths=[train_df.shape[0]]*2 if args.data_mix_languages else [train_df.shape[0]],
-        batch_size=args.train_batch_size, # sampler batch size must match training batch size to avoid multiple query-doc pairs sharing the same document in same batch (will be falsely treated as a negative in MNRL)
-        mode=args.data_sampler_mode  # "interleave"or "sequential"
-    )
+    # train_sampler = InterleaveBatchSampler(
+    #     lenngths=[train_df.shape[0]]*2 if args.data_mix_languages else [train_df.shape[0]],
+    #     batch_size=args.train_batch_size, # sampler batch size must match training batch size to avoid multiple query-doc pairs sharing the same document in same batch (will be falsely treated as a negative in MNRL)
+    #     mode=args.data_sampler_mode  # "interleave"or "sequential"
+    # )
 
-    train_dataloader = DataLoader(train_dataset, batch_size=args.train_batch_size, sampler=train_sampler)
-    logger.info(f"Training dataset prepared with {len(train_dataset)} samples and batch size {args.train_batch_size}. Sampler mode: {args.data_sampler_mode}")
+    # train_dataloader = DataLoader(train_dataset, batch_size=args.train_batch_size, sampler=train_sampler)
+    # logger.info(f"Training dataset prepared with {len(train_dataset)} samples and batch size {args.train_batch_size}. Sampler mode: {args.data_sampler_mode}")
 
     logger.info(f"Initializing model: {args.model_name}")
     model = SentenceTransformer(args.model_name)
@@ -127,9 +128,8 @@ def main(args):
         output_dir = model_output_path,
         num_train_epochs = args.train_num_epochs,
         per_device_train_batch_size = args.train_batch_size,
-        per_device_eval_batch_size = args.train_batch_size,
         learning_rate=args.train_learning_rate,
-
+        batch_sampler=BatchSamplers.NO_DUPLICATES,
         logging_first_step=True,
         logging_strategy="epoch",
         log_level="info",
@@ -140,7 +140,7 @@ def main(args):
     )
 
     logger.info("Extracting queries, corpus, and relevant documents for evaluation")
-    eval_queries, eval_corpus, eval_rel_docs = extract_query_coprus_relevant_docs(eval_dataset, anchor_col, doc_col)
+    eval_queries, eval_corpus, eval_rel_docs = extract_query_coprus_relevant_docs(eval_dataset, 'anchor', 'doc')
     ir_evaluator = InformationRetrievalEvaluator(
         queries=eval_queries, #q_id:query
         corpus=eval_corpus, #d_id:doc
@@ -152,7 +152,7 @@ def main(args):
     trainer = SentenceTransformerTrainer(
         model=model,
         args=args,
-        train_dataloader=train_dataloader
+        train_dataset=train_dataset,
         loss=train_loss,
         evaluator=ir_evaluator,
     )
