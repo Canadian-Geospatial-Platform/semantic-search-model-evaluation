@@ -13,6 +13,9 @@ import logging
 import sys
 import os 
 
+from data_loader import subset_extraction, InterleaveBatchSampler
+from torch.utils.data import DataLoader
+
 # Configure logging to file and console
 logging.basicConfig(level=logging.INFO, 
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -32,8 +35,10 @@ def parse_args():
     parser.add_argument("--model_save_directory", type=str, required=True, help="Directory to save the fine-tuned model")
 
     # configuration
-    parser.add_argument("--anchor_column", type=str, default='features_properties_title_en', help="Name of the column to use as anchor (query) in training. Default is 'features_properties_title_en'")
-    parser.add_argument("--doc_column", type=str, default='features_properties_text_en', help="Name of the column to use as document in training. Default is 'features_properties_text_en'")
+    parser.add_argument("--data_anchor_column", type=str, default='features_properties_title_en', help="Name of the column to use as anchor (query) in training. Default is 'features_properties_title_en'")
+    parser.add_argument("--data_doc_column", type=str, default='text_en', help="Name of the column to use as document in training. Default is 'features_properties_text_en'")
+    parser.add_argument("--data_mix_languages", action="store_true", default=False, help="If set, uses bilingual document expansion for training by treating the specified anchor column as a prefix and looking for corresponding columns with _en and _fr suffixes. The document column is expected to be the same for both languages. By default, this is set to False.")
+    parser.add_argument("--data_sampler_mode", type=str, default='sequential', help="Mode for sampling batches during training. Default is 'sequential'. Other supported option is 'interleave' which alternates between English and French samples in each batch when mix_languages is enabled.")
 
     # training specific
     parser.add_argument("--train_num_epochs", type=int, default=2, help="Number of training epochs. Default is 2.")
@@ -60,7 +65,7 @@ def extract_query_coprus_relevant_docs(df, query_col, doc_col):
         relevant_docs[q_id].add(d_id)
 
     return queries, corpus, relevant_docs
-    
+
 def main(args):
     logger.info(f"Starting fine-tuning for {args.model_name}")
 
@@ -75,8 +80,8 @@ def main(args):
     logger.info(f"Train data shape: {train_df.shape}")
     logger.info(f"Eval data shape: {eval_df.shape}")
 
-    anchor_col = args.anchor_column
-    doc_col = args.doc_column
+    anchor_col = args.data_anchor_column
+    doc_col = args.data_doc_column
 
     if anchor_col not in train_df.columns or doc_col not in train_df.columns:
         logger.error(f"Anchor column '{anchor_col}' or document column '{doc_col}' not found in the training data.")
@@ -86,6 +91,21 @@ def main(args):
         return
 
     logger.info(f"Using anchor column: {anchor_col} and document column: {doc_col} for training and evaluation.")
+
+    logger.info(f"Preparing training dataset with mix_languages set to {args.data_mix_languages}")
+    train_dataset = subset_extraction(train_df, anchor_col, doc_col, mix_languages=args.data_mix_languages)
+    eval_dataset = subset_extraction(eval_df, anchor_col, doc_col, mix_languages=args.data_mix_languages)
+
+    train_sampler = InterleaveBatchSampler(
+        len_en=train_df.shape[0],
+        len_fr=train_df.shape[0],
+        batch_size=args.train_batch_size, # sampler batch size must match training batch size to avoid multiple query-doc pairs sharing the same document in same batch (will be falsely treated as a negative in MNRL)
+        mode=args.data_sampler_mode  # "interleave"or "sequential"
+    )
+
+    train_dataloader = DataLoader(train_dataset, batch_size=args.train_batch_size, sampler=train_sampler)
+    eval_dataloader = DataLoader(eval_dataset, batch_size=args.train_batch_size, sampler=train_sampler)
+    logger.info(f"Training dataset prepared with {len(train_dataset)} samples and batch size {args.train_batch_size}. Sampler mode: {args.data_sampler_mode}")
 
     logger.info(f"Initializing model: {args.model_name}")
     model = SentenceTransformer(args.model_name)
@@ -107,10 +127,10 @@ def main(args):
 
     args = SentenceTransformerTrainingArguments(
         output_dir = model_output_path,
-        num_train_epochs = 2,
-        per_device_train_batch_size = 32,
-        per_device_eval_batch_size = 32,
-        learning_rate=2e-5,
+        num_train_epochs = args.train_num_epochs,
+        per_device_train_batch_size = args.train_batch_size,
+        per_device_eval_batch_size = args.train_batch_size,
+        learning_rate=args.train_learning_rate,
         batch_sampler=BatchSamplers.NO_DUPLICATES, #just in case
 
         logging_first_step=True,
@@ -123,7 +143,7 @@ def main(args):
     )
 
     logger.info("Extracting queries, corpus, and relevant documents for evaluation")
-    eval_queries, eval_corpus, eval_rel_docs = extract_query_coprus_relevant_docs(eval_df, query_col=anchor_col, doc_col=doc_col)
+    eval_queries, eval_corpus, eval_rel_docs = extract_query_coprus_relevant_docs(eval_df, anchor_col, doc_col)
     ir_evaluator = InformationRetrievalEvaluator(
         queries=eval_queries, #q_id:query
         corpus=eval_corpus, #d_id:doc
@@ -135,8 +155,8 @@ def main(args):
     trainer = SentenceTransformerTrainer(
         model=model,
         args=args,
-        train_dataset=train_df[[anchor_col, doc_col]],
-        eval_dataset=eval_df[[anchor_col, doc_col]],
+        train_dataloader=train_dataloader,
+        eval_dataloader=eval_dataloader,
         loss=train_loss,
         evaluator=ir_evaluator,
     )
@@ -154,5 +174,15 @@ if __name__ == '__main__':
 
     main(args)
     
-    # Example usage:
-    
+# Example usage:
+#     python finetune_on_columns.py \
+#         --train_data_path data/train.parquet \
+#         --eval_data_path data/eval.parquet \
+#         --model_name sentence-transformers/all-MiniLM-L6-v2 \
+#         --model_save_directory ./models \
+#         --anchor_column features_properties_title_en \
+#         --doc_column features_properties_text_en \
+#         --train_num_epochs 2 \
+#         --train_batch_size 32 \
+#         --train_learning_rate 2e-5 \
+#         --train_losstype MNRL
