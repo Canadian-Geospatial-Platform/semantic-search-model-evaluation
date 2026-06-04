@@ -2,8 +2,8 @@ version: 0.2
 
 env:
   variables:
-    ENV: stage                 
-    PYTHONPATH: src
+    ENV: "stage"
+    PYTHONPATH: "src"
 
 phases:
   install:
