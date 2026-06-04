@@ -3,7 +3,7 @@ from unittest.mock import patch, MagicMock
 import pandas as pd
 import logging
 
-from src.data_processing.utils.text_normalization import (
+from data_processing.utils.text_normalization import (
     mask_emails,
     mask_urls,
     normalize_text_columns,
