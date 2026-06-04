@@ -4,7 +4,6 @@ env:
   variables:
     ENV: stage                 
     PYTHONPATH: src
-    PYTHON_VERSION: 3.11
 
 phases:
   install:
@@ -18,7 +17,7 @@ phases:
   pre_build:
     commands:
       - echo "Environment: $ENV"
-      - echo "Running tests from: $TEST_PATH"
+      - echo "Running tests from: $PYTHONPATH"
 
   build:
     commands:
