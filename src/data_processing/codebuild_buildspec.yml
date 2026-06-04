@@ -16,8 +16,8 @@ phases:
 
   pre_build:
     commands:
-      - echo Environment: $ENV
-      - echo Running tests from: $PYTHONPATH
+      - echo Environment is set to $ENV
+      - echo Running tests from $PYTHONPATH
 
   build:
     commands:
