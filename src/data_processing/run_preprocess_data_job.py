@@ -14,26 +14,24 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger(__name__)
-env = os.getenv("ENVIRONMENT") # i.e. dev, stage
+env = os.getenv("ENV") # e.g. stage
 
 def parse_args():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("--job_name", type=str, required=True, help="Name of Sagemaker preprocessing job")
-    parser.add_argument("--region", type=str, required=True, help="AWS region for processing job")
-    parser.add_argument("--input_s3_bucket", type=str, required=True, help="Name of S3 bucket where input data is stored")
-    parser.add_argument("--output_s3_bucket", type=str, required=True, help="Name of S3 bucket where processed output data will be stored")
-    parser.add_argument("--data_split_ratio", type=float, default=0.1, help="AWS region for processing job")
-    parser.add_argument("--keep_eoCollections", action="store_true", default=False, help="Name of S3 bucket where processed output data will be stored")
+    parser.add_argument("--sagemaker_job_name", type=str, help="Name of Sagemaker preprocessing job")
+    parser.add_argument("--input_s3_bucket", type=str, help="Name of S3 bucket where input data is stored")
+    parser.add_argument("--output_s3_bucket", type=str, help="Name of S3 bucket where processed output data will be stored")
+    parser.add_argument("--data_split_ratio", type=float, default=0.1, help="Ratio for splitting training and test data")
+    parser.add_argument("--keep_eoCollections", action="store_true", default=False, help="Whether to keep EO collections in the processed data")
 
     return parser.parse_args()
 
 def authenticate():
-    # TODO: make accessible from Github Actions
     role = get_execution_role()
     return role
 
-def run_sagemaker_job(job_name, role, region, input_s3, output_s3, data_split_ratio, keep_eocollections):
+def run_sagemaker_job(job_name, role, input_s3, output_s3, data_split_ratio, keep_eocollections):
     # using sklearn image
     processor = FrameworkProcessor(
         estimator_cls=SKLearn,
@@ -77,19 +75,35 @@ def run_sagemaker_job(job_name, role, region, input_s3, output_s3, data_split_ra
         logs=True # display logs
     )
 
+def get_args_if_not_set(args):
+    for arg_name, arg_value in vars(args).items():
+        if arg_value is None:
+            logger.info(f"Argument '{arg_name}' not set. Attempting to retrieve from environment variables.")
+            arg_value_from_env = os.getenv(arg_name.upper())
+            if arg_value_from_env is not None:
+                logger.info(f"Successfully retrieved '{arg_name}' from environment variable.")
+                setattr(args, arg_name, arg_value_from_env)
+            else:
+                logger.error(f"Environment variable for argument '{arg_name}' not found. Please set the argument or the corresponding environment variable and try again.")
+                exit(1)
+        else:
+            logger.info(f"Argument '{arg_name}' is set to: {arg_value}")
+
+    return args
 
 def main():
     logger.info("Kickstarting preprocessing job")
     args = parse_args()
+    args = get_args_if_not_set(args)
 
-    complete_job_name = f"{args.job_name}-{env}-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+    complete_job_name = f"{args.sagemaker_job_name}-{env}-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
 
     # authenticate
     logger.info("Authenticating")
     role = authenticate()
     logger.info("Authentication complete.")
 
-    run_sagemaker_job(complete_job_name, role, args.region, args.input_s3_bucket, args.output_s3_bucket, args.data_split_ratio, args.keep_eoCollections)
+    run_sagemaker_job(complete_job_name, role, args.input_s3_bucket, args.output_s3_bucket, args.data_split_ratio, args.keep_eoCollections)
     
     logger.info("Finished preprocessing job.")
 

@@ -4,6 +4,11 @@ env:
   variables:
     ENV: "stage"
     PYTHONPATH: "src"
+    SAGEMAKER_JOB_NAME: "semantic-search-nlp-for-training"
+    INPUT_S3_BUCKET: "webpresence-geocore-geojson-to-parquet"
+    OUTPUT_S3_BUCKET: "webpresence-nlp-data-preprocessing"
+    DATA_SPLIT_RATIO: "0.1"
+    KEEP_EOCOLLECTIONS: "false"
 
 phases:
   install:
@@ -18,11 +23,14 @@ phases:
     commands:
       - echo Environment is set to $ENV
       - echo Running tests from $PYTHONPATH
+      - export INPUT_S3_BUCKET="${INPUT_S3_BUCKET}-${ENV}"
+      - export OUTPUT_S3_BUCKET="${OUTPUT_S3_BUCKET}-${ENV}"
+      - echo Starting pytest...
+      - pytest
 
   build:
     commands:
-      - echo Starting pytest...
-      - pytest
+      - python src/data_processing/preprocess_data.py
 
   post_build:
     commands:
