@@ -16,9 +16,9 @@ logger = logging.getLogger(__name__)
 def parse_args():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("--input-data-dir", type=str, required=True)
-    parser.add_argument("--output-path", type=str, required=True)
-    parser.add_argument("--train-test-split-ratio", type=float, default=0.2)
+    parser.add_argument("--input-data-dir", type=str, help="Path to the input data directory containing the raw datasets in parquet format")
+    parser.add_argument("--output-path", type=str, help="Path to the output directory where the preprocessed data will be saved")
+    parser.add_argument("--train-test-split-ratio", type=float, default=0.1)
     parser.add_argument("--random-state", type=int, default=42)
     parser.add_argument("--keep-eoCollections", action="store_true", default=False,
                         help="If set, keeps records with defined eoCollection values. By default, these records are removed from the dataset as they are not relevant for semantic search training.")
