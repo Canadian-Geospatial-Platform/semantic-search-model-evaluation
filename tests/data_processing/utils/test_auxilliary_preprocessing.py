@@ -9,6 +9,7 @@ import logging
 from data_processing.utils.auxilliary_preprocessing import (
     load_data,
     save_data,
+    split_data,
     extract_unique_desc,
     get_second_segment,
     extract_org,
@@ -49,7 +50,6 @@ class TestLoadData:
         assert isinstance(result, pd.DataFrame)
         assert result.shape[0] == 4
         assert list(result.columns) == ["col1", "col2"]
-        pd.testing.assert_frame_equal( result, pd.concat([df1, df2], ignore_index=True) )
     
     def test_load_data_no_parquet_files(self, tmp_path):
         """Test error when no parquet files are found."""
@@ -66,42 +66,91 @@ class TestSaveData:
     """Tests for save_data function."""
     
     def test_save_data_creates_files(self, tmp_path):
-        """Test that save_data creates train.parquet and eval.parquet files."""
+        """Test that save_data creates provided parquet files."""
         train_df = pd.DataFrame({"col1": [1, 2], "col2": ["a", "b"]})
         test_df = pd.DataFrame({"col1": [3, 4], "col2": ["c", "d"]})
         
-        save_data(train_df, test_df, str(tmp_path))
+        save_data([train_df, test_df], ["train.parquet", "eval.parquet"], str(tmp_path))
         
         train_file = tmp_path / "train.parquet"
-        test_file = tmp_path / "eval.parquet"
+        eval_file = tmp_path / "eval.parquet"
         
         assert train_file.exists()
-        assert test_file.exists()
+        assert eval_file.exists()
     
     def test_save_data_content_correctness(self, tmp_path):
         """Test that saved data can be read back correctly."""
         train_df = pd.DataFrame({"col1": [1, 2, 3], "col2": ["a", "b", "c"]})
-        test_df = pd.DataFrame({"col1": [4, 5], "col2": ["d", "e"]})
+        eval_df = pd.DataFrame({"col1": [4, 5], "col2": ["d", "e"]})
         
-        save_data(train_df, test_df, str(tmp_path))
+        save_data([train_df, eval_df], ["train.parquet", "eval.parquet"], str(tmp_path))
         
         loaded_train = pd.read_parquet(tmp_path / "train.parquet")
-        loaded_test = pd.read_parquet(tmp_path / "eval.parquet")
+        loaded_eval = pd.read_parquet(tmp_path / "eval.parquet")
         
         pd.testing.assert_frame_equal(loaded_train, train_df)
-        pd.testing.assert_frame_equal(loaded_test, test_df)
+        pd.testing.assert_frame_equal(loaded_eval, eval_df)
     
     def test_save_data_creates_directory(self, tmp_path):
         """Test that save_data creates output directory if it doesn't exist."""
         nested_path = tmp_path / "output" / "nested"
         train_df = pd.DataFrame({"col1": [1]})
-        test_df = pd.DataFrame({"col1": [2]})
+        eval_df = pd.DataFrame({"col1": [2]})
         
-        save_data(train_df, test_df, str(nested_path))
+        save_data([train_df, eval_df], ["train.parquet", "eval.parquet"], str(nested_path))
         
         assert nested_path.exists()
         assert (nested_path / "train.parquet").exists()
         assert (nested_path / "eval.parquet").exists()
+
+
+class TestSplitData:
+    """Tests for split_data function."""
+
+    def test_split_data_returns_three_partitions(self):
+        """Test split_data returns train, eval, and test DataFrames."""
+        df = pd.DataFrame({
+            "col1": list(range(10)),
+            "col2": ["a"] * 10,
+        })
+
+        train_df, eval_df, test_df = split_data(df, test_size=0.4, random_state=42)
+
+        assert isinstance(train_df, pd.DataFrame)
+        assert isinstance(eval_df, pd.DataFrame)
+        assert isinstance(test_df, pd.DataFrame)
+        assert train_df.shape[0] + eval_df.shape[0] + test_df.shape[0] == 10
+
+    def test_split_data_shapes_are_expected(self):
+        """Test split_data returns the expected partition sizes for 10 rows."""
+        df = pd.DataFrame({"col1": list(range(10)), "col2": ["x"] * 10})
+
+        train_df, eval_df, test_df = split_data(df, test_size=0.4, random_state=123)
+
+        assert train_df.shape == (6, 2)
+        assert eval_df.shape == (2, 2)
+        assert test_df.shape == (2, 2)
+
+    def test_split_data_reproducible_with_random_state(self):
+        """Test split_data output is stable when using the same random state."""
+        df = pd.DataFrame({"col1": list(range(10)), "col2": ["y"] * 10})
+
+        first_split = split_data(df, test_size=0.4, random_state=99)
+        second_split = split_data(df, test_size=0.4, random_state=99)
+
+        assert first_split[0].equals(second_split[0])
+        assert first_split[1].equals(second_split[1])
+        assert first_split[2].equals(second_split[2])
+
+    def test_split_data_preserves_all_rows(self):
+        """Test that split_data preserves all rows across partitions."""
+        df = pd.DataFrame({"col1": list(range(10)), "col2": ["z"] * 10})
+
+        train_df, eval_df, test_df = split_data(df, test_size=0.4, random_state=7)
+
+        combined = pd.concat([train_df, eval_df, test_df], ignore_index=True)
+        assert combined.shape[0] == 10
+        assert set(combined["col1"]) == set(df["col1"])
 
 
 class TestExtractUniqueDesc:

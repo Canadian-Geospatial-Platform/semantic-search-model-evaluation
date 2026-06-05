@@ -2,6 +2,8 @@ import json
 import pandas as pd
 import logging
 
+from sklearn.model_selection import train_test_split
+
 import glob
 import os
 
@@ -23,24 +25,52 @@ def load_data(input_data_dir: str) -> pd.DataFrame:
     return combined_df
 
 def save_data(
-    train_df: pd.DataFrame,
-    test_df: pd.DataFrame,
+    df_list: list[pd.DataFrame],
+    filenames: list[str],
     output_path: str,
 ):
     logger.info("Saving processed datasets")
 
+    if len(df_list) != len(filenames):
+        logger.error("Length of df_list and filenames must be the same. Skipping save.")
+        return
+
     os.makedirs(output_path, exist_ok=True)
 
-    train_file = os.path.join(output_path, "train.parquet")
-    test_file = os.path.join(output_path, "eval.parquet")
+    for df, filename in zip(df_list, filenames):
+        file_path = os.path.join(output_path, filename)
+        df.to_parquet(file_path, index=False)
+        logger.info(f"Data saved to {file_path}")
+    
+    logger.info(f"{len(df_list)} datasets saved to {output_path}")
 
-    train_df.to_parquet(train_file, index=False)
-    test_df.to_parquet(test_file, index=False)
+def split_data(
+    df: pd.DataFrame,
+    test_size: float,
+    random_state: int
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
 
-    logger.info(f"Train data saved to {train_file}")
-    logger.info(f"Test data saved to {test_file}")
+    logger.info("Splitting dataset")
 
+    train_df, test_df = train_test_split(
+        df,
+        test_size=test_size,
+        random_state=random_state,
+        shuffle=True
+    )
 
+    # further split test_df into eval and test sets 50-50
+    eval_df, test_df = train_test_split(
+        test_df,
+        test_size=0.5,
+        random_state=random_state,
+        shuffle=True
+    )
+
+    logger.info(f"Train shape: {train_df.shape}")
+    logger.info(f"Eval shape: {eval_df.shape}")
+    logger.info(f"Test shape: {test_df.shape}")
+    return train_df, eval_df, test_df
 
 def extract_unique_desc(options_str: str, language: str = 'en') -> list[str]:
     '''
