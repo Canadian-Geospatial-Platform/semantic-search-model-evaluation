@@ -52,6 +52,10 @@ def _generate_queries_batch(texts, max_length=64):
             input_ids=encoded['input_ids'],
             attention_mask=encoded['attention_mask'],
             max_length=max_length,
+            do_sample=True,
+            top_p=0.95,
+            top_k=10,
+            num_return_sequences=1,
         )
     
     # Decode and clean (move outputs back to CPU for decoding)
