@@ -1,6 +1,13 @@
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 import torch
 
+import logging
+import pandas as pd
+from tqdm import tqdm
+
+logger = logging.getLogger(__name__)
+tqdm.pandas()
+
 MODEL_NAME = 'doc2query/msmarco-14langs-mt5-base-v1'
 TOKENIZER = AutoTokenizer.from_pretrained(MODEL_NAME)
 MODEL = AutoModelForSeq2SeqLM.from_pretrained(MODEL_NAME)
@@ -22,7 +29,7 @@ def _generate_queries(text, max_length=64, top_p=0.95, top_k=10):
         for output in sampling_outputs
     ]
 
-    prefixes = ["What is a ", "What is the ", "What is ", "What are ", "What are the "]
+    prefixes = ["What is a ", "What is the ", "What is ", "What are ", "What are the "] # overused prefixes in generated queries
 
     def _clean_option(option):
         text = option.strip()
@@ -44,7 +51,7 @@ def create_queries(df, text_col, new_col, **generate_kwargs):
         raise ValueError(f"Column '{text_col}' not found in DataFrame")
     
     df = df.copy()
-    df[new_col] = df[text_col].map(
+    df[new_col] = df[text_col].progress_map(
         lambda text: _generate_queries(text, **generate_kwargs)
     )
     return df

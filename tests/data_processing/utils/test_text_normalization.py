@@ -443,7 +443,20 @@ class TestPreprocessRecordsIntoText:
         result = preprocess_records_into_text(sample_df_en, languages=['fr'], keyword_prefixes=['mots-clés associés:'], output_format='sequential')
 
         assert len(result) == 2
-        assert result.iloc[0] == "\n\n\n"  # should return empty text with newlines for missing columns
+        assert result.iloc[0] == ""  # should return empty text with empty strings for missing columns
+    
+    def test_missing_values_columns(self):
+        """Test that missing values in columns are handled gracefully."""
+        sample_df = pd.DataFrame({
+            'features_properties_title_en': ['Product A', 'Product B'],
+            'features_properties_description_normalized_en': [None, 'Description B'],
+            'features_properties_keywords_en': ['keyword1, keyword2', 'keyword3, keyword4']
+        })
+        result = preprocess_records_into_text(sample_df, languages=['en'], keyword_prefixes=['keywords:'], output_format='sequential')
+
+        assert len(result) == 2
+        assert result.iloc[0] == "Product A\nkeywords:keyword1, keyword2\n"
+        assert result.iloc[1] == "Product B\nkeywords:keyword3, keyword4\nDescription B"
     
     def test_output_is_series(self, sample_df_en):
         """Test that output is a pandas Series."""

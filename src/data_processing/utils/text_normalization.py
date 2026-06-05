@@ -263,10 +263,10 @@ def preprocess_records_into_text(df, languages=['en', 'fr'], keyword_prefixes=['
     # send warning if any of the selected columns are not in the DataFrame
     missing_columns = [col for col in selected_columns if col not in df.columns]
     if missing_columns:
-        logger.error(f"Columns {missing_columns} used for text processing are not found in the DataFrame.")
-        return pd.Series(["\n".join(["\n\n\n" for _ in languages])] * len(df))
+        logger.warning(f"Columns {missing_columns} used for text processing are not found in the DataFrame. Returning empty text.")
+        return pd.Series(["".join(["" for _ in languages])] * len(df))
 
-    df = df[selected_columns]
+    df = df[selected_columns].fillna("")
     if output_format == 'sequential':
         return df.apply(lambda x: "\n".join(
             [f"{x[f'features_properties_title_{lang}']}\n{keyword_prefixes[i]}{x[f'features_properties_keywords_{lang}'] if isinstance(x[f'features_properties_keywords_{lang}'], str) else ', '.join(x[f'features_properties_keywords_{lang}']) if isinstance(x[f'features_properties_keywords_{lang}'], list) else ''}\n{x[f'features_properties_description_normalized_{lang}']}" for i, lang in enumerate(languages)]), axis=1)

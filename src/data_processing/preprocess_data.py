@@ -1,10 +1,10 @@
 import logging
 import argparse
 import pandas as pd
-from sklearn.model_selection import train_test_split
 
 from utils.auxilliary_preprocessing import *
 from utils.full_processing import *
+from utils.query_generator import create_queries
 
 
 logging.basicConfig(
@@ -25,27 +25,6 @@ def parse_args():
                         help="If set, keeps records with defined eoCollection values. By default, these records are removed from the dataset as they are not relevant for semantic search training.")
 
     return parser.parse_args()
-
-
-def split_data(
-    df: pd.DataFrame,
-    test_size: float,
-    random_state: int
-) -> tuple[pd.DataFrame, pd.DataFrame]:
-
-    logger.info("Splitting dataset")
-
-    train_df, test_df = train_test_split(
-        df,
-        test_size=test_size,
-        random_state=random_state,
-        shuffle=True
-    )
-
-    logger.info(f"Train shape: {train_df.shape}")
-    logger.info(f"Test shape: {test_df.shape}")
-
-    return train_df, test_df
 
 def main():
     logger.info("Starting preprocessing job")
@@ -71,14 +50,19 @@ def main():
         df = df[df['features_properties_eoCollection'].isna()]
         logger.info(f"Successfully removed records with eoCollection values. Current shape: {df.shape}")
     
+    logger.info("Generating synthetic queries for both en and fr texts. This may take a while (~1h).")
+    df = create_queries(df, 'text_en', 'query_en')
+    df = create_queries(df, 'text_fr', 'query_fr')
+    logger.info("Successfully generated synthetic queries")
+
     # splitting data
     logger.info(f"Splitting dataset into train and test sets based on ratio: {args.train_test_split_ratio}")
-    train_df, test_df = split_data(df, args.train_test_split_ratio, args.random_state)
+    train_df, eval_df, test_df = split_data(df, args.train_test_split_ratio, args.random_state)
     logger.info(f"Successfully split data.")
     
     save_data(
-        train_df,
-        test_df,
+        [train_df, eval_df, test_df],
+        ["train.parquet", "eval.parquet", "test.parquet"],
         args.output_path,
     )
 
