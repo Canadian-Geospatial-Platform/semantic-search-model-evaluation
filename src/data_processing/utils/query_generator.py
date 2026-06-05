@@ -1,6 +1,5 @@
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 import torch
-
 import logging
 import pandas as pd
 from tqdm import tqdm
@@ -12,48 +11,97 @@ MODEL_NAME = 'doc2query/msmarco-14langs-mt5-base-v1'
 TOKENIZER = AutoTokenizer.from_pretrained(MODEL_NAME)
 MODEL = AutoModelForSeq2SeqLM.from_pretrained(MODEL_NAME)
 
-def _generate_queries(text, max_length=64, top_p=0.95, top_k=10):
-    input_ids = TOKENIZER.encode(str(text), return_tensors='pt')
+PREFIXES = ["What is a ", "What is the ", "What is ", "What are ", "What are the "]
+
+
+def _clean_option(option):
+    """Clean generated option by removing common prefixes."""
+    text = option.strip()
+    for prefix in PREFIXES:
+        if text.lower().startswith(prefix.lower()):
+            text = text[len(prefix):].strip()
+            break
+    return text
+
+
+def _generate_queries_batch(texts, max_length=64, num_beams=2, num_return_sequences=2):
+    """
+    Generate queries for a batch of texts using beam search.
+    
+    Args:
+        texts: List of input texts
+        max_length: Maximum length of generated queries
+        num_beams: Number of beams for beam search (1 = greedy decoding)
+        num_return_sequences: Number of sequences to generate per input
+    
+    Returns:
+        List of generated and cleaned query strings
+    """
+    # Tokenize batch with padding
+    encoded = TOKENIZER(
+        list(texts),
+        return_tensors='pt',
+        padding=True,
+        truncation=True,
+        max_length=512
+    )
+    
     with torch.no_grad():
-        sampling_outputs = MODEL.generate(
-            input_ids=input_ids,
+        outputs = MODEL.generate(
+            input_ids=encoded['input_ids'],
+            attention_mask=encoded['attention_mask'],
             max_length=max_length,
-            do_sample=True,
-            top_p=top_p,
-            top_k=top_k,
-            num_return_sequences=2,
+            num_beams=num_beams,
+            num_return_sequences=num_return_sequences,
         )
     
-    options = [
-        TOKENIZER.decode(output, skip_special_tokens=True)
-        for output in sampling_outputs
-    ]
-
-    prefixes = ["What is a ", "What is the ", "What is ", "What are ", "What are the "] # overused prefixes in generated queries
-
-    def _clean_option(option):
-        text = option.strip()
-        for prefix in prefixes:
-            if text.lower().startswith(prefix.lower()):
-                text = text[len(prefix):].strip()
-                break
-        return text
-
-    cleaned_options = [_clean_option(option) for option in options]
-
-    # return longer query for more specificity
-    return cleaned_options[1] if len(cleaned_options[1]) > len(cleaned_options[0]) else cleaned_options[0]
+    # Decode and clean
+    queries = []
+    for idx, output in enumerate(outputs):
+        decoded = TOKENIZER.decode(output, skip_special_tokens=True)
+        cleaned = _clean_option(decoded)
+        queries.append(cleaned)
+    
+    # Group outputs by input text and select best
+    results = []
+    for i in range(len(texts)):
+        sequence_group = queries[i * num_return_sequences:(i + 1) * num_return_sequences]
+        # Return longer query for more specificity
+        best = max(sequence_group, key=len)
+        results.append(best)
+    
+    return results
 
 
-def create_queries(df, text_col, new_col, **generate_kwargs):
-    """Map the source text column to generated query lists and add them as a new column."""
+def create_queries(df, text_col, new_col, batch_size=32, **generate_kwargs):
+    """
+    Map source text column to generated queries and add them as a new column.
+    Uses efficient batch processing for inference.
+    
+    Args:
+        df: Input DataFrame
+        text_col: Column name containing source text
+        new_col: Column name for generated queries
+        batch_size: Batch size for inference (default: 32)
+        **generate_kwargs: Generation parameters (max_length, num_beams, num_return_sequences)
+    
+    Returns:
+        DataFrame with new_col containing generated query strings
+    """
     if text_col not in df.columns:
         raise ValueError(f"Column '{text_col}' not found in DataFrame")
     
     df = df.copy()
-    df[new_col] = df[text_col].progress_map(
-        lambda text: _generate_queries(text, **generate_kwargs)
-    )
+    texts = df[text_col].tolist()
+    
+    # Process texts in batches
+    results = []
+    for i in tqdm(range(0, len(texts), batch_size), desc="Generating queries"):
+        batch_texts = texts[i:i + batch_size]
+        batch_queries = _generate_queries_batch(batch_texts, **generate_kwargs)
+        results.extend(batch_queries)
+    
+    df[new_col] = results
     return df
 
 
