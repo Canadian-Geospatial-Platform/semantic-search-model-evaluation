@@ -27,15 +27,13 @@ def _clean_option(option):
     return text
 
 
-def _generate_queries_batch(texts, max_length=64, num_beams=2, num_return_sequences=2):
+def _generate_queries_batch(texts, max_length=64):
     """
     Generate queries for a batch of texts using beam search.
     
     Args:
         texts: List of input texts
         max_length: Maximum length of generated queries
-        num_beams: Number of beams for beam search (1 = greedy decoding)
-        num_return_sequences: Number of sequences to generate per input
     
     Returns:
         List of generated and cleaned query strings
@@ -54,8 +52,6 @@ def _generate_queries_batch(texts, max_length=64, num_beams=2, num_return_sequen
             input_ids=encoded['input_ids'],
             attention_mask=encoded['attention_mask'],
             max_length=max_length,
-            num_beams=num_beams,
-            num_return_sequences=num_return_sequences,
         )
     
     # Decode and clean (move outputs back to CPU for decoding)
@@ -64,16 +60,8 @@ def _generate_queries_batch(texts, max_length=64, num_beams=2, num_return_sequen
         decoded = TOKENIZER.decode(output.cpu(), skip_special_tokens=True)
         cleaned = _clean_option(decoded)
         queries.append(cleaned)
-    
-    # Group outputs by input text and select best
-    results = []
-    for i in range(len(texts)):
-        sequence_group = queries[i * num_return_sequences:(i + 1) * num_return_sequences]
-        # Return longer query for more specificity
-        best = max(sequence_group, key=len)
-        results.append(best)
-    
-    return results
+        
+    return queries
 
 
 def create_queries(df, text_col, new_col, batch_size=32, **generate_kwargs):
@@ -86,7 +74,7 @@ def create_queries(df, text_col, new_col, batch_size=32, **generate_kwargs):
         text_col: Column name containing source text
         new_col: Column name for generated queries
         batch_size: Batch size for inference (default: 32)
-        **generate_kwargs: Generation parameters (max_length, num_beams, num_return_sequences)
+        **generate_kwargs: Generation parameters (max_length)
     
     Returns:
         DataFrame with new_col containing generated query strings
