@@ -33,7 +33,7 @@ phases:
 
   build:
     commands:
-      - python src/data_processing/preprocess_data.py
+      - python src/data_processing/run_preprocess_data_job.py
 
   post_build:
     commands:
