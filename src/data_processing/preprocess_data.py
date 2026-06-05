@@ -4,7 +4,6 @@ import pandas as pd
 
 from utils.auxilliary_preprocessing import *
 from utils.full_processing import *
-from utils.query_generator import create_queries
 
 
 logging.basicConfig(
