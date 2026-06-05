@@ -71,8 +71,8 @@ def run_sagemaker_job(job_name, role, input_s3, output_s3, data_split_ratio, kee
         outputs=outputs,
         arguments=arguments,
         job_name=job_name,
-        wait=True, # for notebook to wait until process finishes to stop running cell
-        logs=True # display logs
+        #wait=True, # for notebook to wait until process finishes to stop running cell
+        #logs=True # display logs
     )
 
 def get_args_if_not_set(args):
