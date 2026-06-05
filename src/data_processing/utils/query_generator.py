@@ -8,8 +8,11 @@ logger = logging.getLogger(__name__)
 tqdm.pandas()
 
 MODEL_NAME = 'doc2query/msmarco-14langs-mt5-base-v1'
+DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+logger.info(f"Using device: {DEVICE}")
+
 TOKENIZER = AutoTokenizer.from_pretrained(MODEL_NAME)
-MODEL = AutoModelForSeq2SeqLM.from_pretrained(MODEL_NAME)
+MODEL = AutoModelForSeq2SeqLM.from_pretrained(MODEL_NAME).to(DEVICE)
 
 PREFIXES = ["What is a ", "What is the ", "What is ", "What are ", "What are the "]
 
@@ -44,7 +47,7 @@ def _generate_queries_batch(texts, max_length=64, num_beams=2, num_return_sequen
         padding=True,
         truncation=True,
         max_length=512
-    )
+    ).to(DEVICE)
     
     with torch.no_grad():
         outputs = MODEL.generate(
@@ -55,10 +58,10 @@ def _generate_queries_batch(texts, max_length=64, num_beams=2, num_return_sequen
             num_return_sequences=num_return_sequences,
         )
     
-    # Decode and clean
+    # Decode and clean (move outputs back to CPU for decoding)
     queries = []
     for idx, output in enumerate(outputs):
-        decoded = TOKENIZER.decode(output, skip_special_tokens=True)
+        decoded = TOKENIZER.decode(output.cpu(), skip_special_tokens=True)
         cleaned = _clean_option(decoded)
         queries.append(cleaned)
     
