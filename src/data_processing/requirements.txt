@@ -3,6 +3,5 @@ numpy
 pandas
 pyarrow
 pytest
-sagemaker
 scikit-learn
 tqdm
