@@ -17,7 +17,10 @@ phases:
     commands:
       - echo Installing dependencies
       - python -m pip install --upgrade pip
-      - pip install pytest pandas pyarrow
+      - |
+        if [ -f src/data_processing/requirements.txt ]; then
+          pip install -r src/data_processing/requirements.txt
+        fi
 
   pre_build:
     commands:

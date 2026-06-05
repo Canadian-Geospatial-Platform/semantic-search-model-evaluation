@@ -50,7 +50,7 @@ def main():
         df = df[df['features_properties_eoCollection'].isna()]
         logger.info(f"Successfully removed records with eoCollection values. Current shape: {df.shape}")
     
-    logger.info("Generating synthetic queries for both en and fr texts. This may take a while (~1h).")
+    logger.info("Generating synthetic queries for both en and fr texts. This may take a while (~3h each).")
     df = create_queries(df, 'text_en', 'query_en')
     df = create_queries(df, 'text_fr', 'query_fr')
     logger.info("Successfully generated synthetic queries")
