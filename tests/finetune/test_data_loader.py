@@ -2,7 +2,7 @@ import pytest
 import pandas as pd
 import numpy as np
 from datasets import Dataset
-from finetune.utils.data_loader import (
+from finetune.utils.extract_dataset import (
     extract_dataset,
 )
 

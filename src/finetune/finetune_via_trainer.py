@@ -13,14 +13,15 @@ import logging
 import sys
 import os 
 
-from finetune.utils.data_loader import extract_dataset, InterleaveBatchSampler
-from torch.utils.data import DataLoader
+from finetune.utils.extract_dataset import extract_dataset
+
+TRAINING_LOG_FILE = os.getenv("TRAINING_LOG_FILE", "./results/training_log.log")
 
 # Configure logging to file and console
 logging.basicConfig(level=logging.INFO, 
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     handlers=[
-                        logging.FileHandler("training_log_MPR.log"),
+                        logging.FileHandler(TRAINING_LOG_FILE),
                         logging.StreamHandler()
                     ])
 logger = logging.getLogger(__name__)
@@ -35,9 +36,10 @@ def parse_args():
     parser.add_argument("--model_save_directory", type=str, required=True, help="Directory to save the fine-tuned model")
 
     # configuration
-    parser.add_argument("--data_anchor_column", type=str, default='features_properties_title_en', help="Name of the column to use as anchor (query) in training. Default is 'features_properties_title_en'")
+    parser.add_argument("--data_anchor_column", type=str, default='query_en', help="Name of the column to use as anchor (query) in training. Default is 'query_en'")
     parser.add_argument("--data_doc_column", type=str, default='text_en', help="Name of the column to use as document in training. Default is 'features_properties_text_en'")
     parser.add_argument("--data_mix_languages", action="store_true", default=False, help="If set, uses bilingual document expansion for training by treating the specified anchor column as a prefix and looking for corresponding columns with _en and _fr suffixes. The document column is expected to be the same for both languages. By default, this is set to False.")
+    parser.add_argument("--data_restrict_num_records_to", type=int, default=None, help="If not None, restricts number of records in training dataset to the number specified")
     
     # training specific
     parser.add_argument("--train_num_epochs", type=int, default=2, help="Number of training epochs. Default is 2.")
@@ -48,6 +50,19 @@ def parse_args():
     return parser.parse_args()
 
 def extract_query_coprus_relevant_docs(dataset, query_col, doc_col):
+    '''
+    Extracts queries, corpus, and relevant documents from the evaluation dataset for InformationRetrievalEvaluator.
+
+    Args:
+    - dataset: HuggingFace Dataset object containing the evaluation data
+    - query_col: Name of the column to use as query (anchor)
+    - doc_col: Name of the column to use as document
+
+    Returns:
+    - queries: Dictionary mapping query IDs to query strings
+    - corpus: Dictionary mapping document IDs to document strings
+    - relevant_docs: Dictionary mapping query IDs to sets of relevant document IDs
+    '''
     queries = {}
     corpus = {}
     relevant_docs = {}
@@ -70,17 +85,25 @@ def extract_query_coprus_relevant_docs(dataset, query_col, doc_col):
 def main(args):
     logger.info(f"Starting fine-tuning for {args.model_name}")
 
+    # 1. SETUP
     # Check if the model save directory exists, create if not
     if not os.path.exists(args.model_save_directory):
         os.makedirs(args.model_save_directory)
         logger.info(f"Created model save directory: {args.model_save_directory}")
     
+    # Load train and eval datasets
     logger.info(f"Loading data from {args.train_data_path} and {args.eval_data_path}")
     train_df = pd.read_parquet(args.train_data_path)
     eval_df = pd.read_parquet(args.eval_data_path)
     logger.info(f"Train data shape: {train_df.shape}")
     logger.info(f"Eval data shape: {eval_df.shape}")
 
+    if args.data_restrict_num_records_to:
+        logger.warning(f"Restricting number of records to {args.data_restrict_num_records_to}")
+        train_df = train_df.iloc[:args.data_restrict_num_records_to]
+        logger.info(f"Train data shape is now: {train_df.shape}")
+
+    # Check if specified columns exist in the datasets
     anchor_col = args.data_anchor_column
     doc_col = args.data_doc_column
 
@@ -93,19 +116,13 @@ def main(args):
 
     logger.info(f"Using anchor column: {anchor_col} and document column: {doc_col} for training and evaluation.")
 
+    # 2. PREPARE DATASETS
+    # Restrict datasets to anchor and doc columns and expand dataset if mix_languages is set
     logger.info(f"Preparing training dataset with mix_languages set to {args.data_mix_languages}")
     train_dataset = extract_dataset(train_df, anchor_col, doc_col, mix_languages=args.data_mix_languages)
     eval_dataset = extract_dataset(eval_df, anchor_col, doc_col, mix_languages=args.data_mix_languages)
 
-    # train_sampler = InterleaveBatchSampler(
-    #     lenngths=[train_df.shape[0]]*2 if args.data_mix_languages else [train_df.shape[0]],
-    #     batch_size=args.train_batch_size, # sampler batch size must match training batch size to avoid multiple query-doc pairs sharing the same document in same batch (will be falsely treated as a negative in MNRL)
-    #     mode=args.data_sampler_mode  # "interleave"or "sequential"
-    # )
-
-    # train_dataloader = DataLoader(train_dataset, batch_size=args.train_batch_size, sampler=train_sampler)
-    # logger.info(f"Training dataset prepared with {len(train_dataset)} samples and batch size {args.train_batch_size}. Sampler mode: {args.data_sampler_mode}")
-
+    # 3. INITIALIZE MODEL
     logger.info(f"Initializing model: {args.model_name}")
     model = SentenceTransformer(args.model_name)
     logger.info("Base model loaded successfully")
@@ -114,6 +131,7 @@ def main(args):
     model_output_path = os.path.join(args.model_save_directory, args.model_name.split('/')[-1])
     logger.info(f"Set up model output path: {model_output_path}")
     
+    # 4. INITIALIZE TRAINING ARGUMENTS AND LOSS
     logger.info(f"Setting up training arguments with loss type: {args.train_losstype}, learning rate: {args.train_learning_rate}, batch size: {args.train_batch_size}, and number of epochs: {args.train_num_epochs}")
     # MultipleNegativesRankingLoss
     if args.train_losstype == "MNRL":
@@ -139,6 +157,7 @@ def main(args):
         save_total_limit=2,
     )
 
+    # Configure InformationRetrievalEvaluator for the eval dataset
     logger.info("Extracting queries, corpus, and relevant documents for evaluation")
     eval_queries, eval_corpus, eval_rel_docs = extract_query_coprus_relevant_docs(eval_dataset, 'anchor', 'doc')
     ir_evaluator = InformationRetrievalEvaluator(
@@ -146,8 +165,7 @@ def main(args):
         corpus=eval_corpus, #d_id:doc
         relevant_docs=eval_rel_docs, #q_id -> set(d_id)
     )
-    ir_evaluator(model)
-
+    
     logger.info("Setting up trainer with model, train and eval datasets (subset of only anchor and doc columns), loss function, and evaluator")
     trainer = SentenceTransformerTrainer(
         model=model,
@@ -157,13 +175,22 @@ def main(args):
         evaluator=ir_evaluator,
     )
 
+    # 5. START TRAINING
     logger.info("Starting training")
     try:
         trainer.train()
     except Exception as e:
         logger.error(f"Error during fine-tuning: {e}")
         return
+    
+    logger.info(f"Finished fine-tuning for {args.model_name}")
 
+    # 6. SAVE MODEL
+    try:
+        trainer.save_model(model_output_path)
+        logger.info(f"Model saved successfully at {model_output_path}")
+    except Exception as e:
+        logger.error(f"Error saving model: {e}")
 
 if __name__ == '__main__':
     args = parse_args()
