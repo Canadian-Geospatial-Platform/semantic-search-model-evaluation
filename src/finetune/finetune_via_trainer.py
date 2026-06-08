@@ -15,7 +15,7 @@ import os
 
 from utils.extract_dataset import extract_dataset
 
-LOGGER_OUTPUT = os.getenv("TRAINING_LOG_FILE", "./results") + "/training_log.log"
+LOGGER_OUTPUT = os.getenv("TRAINING_LOG_FILE", "./results") + "/logger_output.log"
 
 # Configure logging to file and console
 logging.basicConfig(level=logging.INFO, 
@@ -148,12 +148,14 @@ def main(args):
         per_device_train_batch_size = args.train_batch_size,
         learning_rate=args.train_learning_rate,
         batch_sampler=BatchSamplers.NO_DUPLICATES,
-        logging_first_step=True,
         logging_strategy="epoch",
         eval_on_start=True,
         eval_strategy="epoch",
         save_strategy="epoch",
         save_total_limit=2,
+        load_best_model_at_end=True,
+        metric_for_best_model="eval_cosine_mrr@10",
+        greater_is_better=True
     )
 
     # Configure InformationRetrievalEvaluator for the eval dataset
@@ -187,7 +189,7 @@ def main(args):
     # 6. SAVE MODEL
     try:
         trainer.save_model(model_output_path)
-        logger.info(f"Model saved successfully at {model_output_path}")
+        logger.info(f"Best model saved successfully at {model_output_path}")
     except Exception as e:
         logger.error(f"Error saving model: {e}")
 
