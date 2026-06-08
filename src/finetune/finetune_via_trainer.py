@@ -142,7 +142,7 @@ def main(args):
         logger.error(f"Loss type, {args.train_losstype}, is not supported. Please use either 'MNRL' or 'GIST'")
         return
 
-    args = SentenceTransformerTrainingArguments(
+    training_args = SentenceTransformerTrainingArguments(
         output_dir = model_output_path,
         num_train_epochs = args.train_num_epochs,
         per_device_train_batch_size = args.train_batch_size,
@@ -168,7 +168,7 @@ def main(args):
     logger.info("Setting up trainer with model, train and eval datasets (subset of only anchor and doc columns), loss function, and evaluator")
     trainer = SentenceTransformerTrainer(
         model=model,
-        args=args,
+        args=training_args,
         train_dataset=train_dataset,
         loss=train_loss,
         evaluator=ir_evaluator,
