@@ -42,7 +42,7 @@ def parse_args():
     parser.add_argument("--data_restrict_num_records_to", type=int, default=None, help="If not None, restricts number of records in training dataset to the number specified")
     
     # training specific
-    parser.add_argument("--train_num_epochs", type=int, default=2, help="Number of training epochs. Default is 2.")
+    parser.add_argument("--train_max_steps", type=int, default=64, help="Number of steps to run for. Default is 64.")
     parser.add_argument("--train_batch_size", type=int, default=32, help="Batch size for training. Default is 32.")
     parser.add_argument("--train_learning_rate", type=float, default=2e-5, help="Learning rate for training. Default is 2e-5.")
     parser.add_argument("--train_losstype", type=str, default="MNRL", help="Loss function to use for training. Options are 'MNRL' for MultipleNegativesRankingLoss and 'GIST' for GISTEmbedLoss. Default is 'MNRL'.")
@@ -144,15 +144,17 @@ def main(args):
 
     training_args = SentenceTransformerTrainingArguments(
         output_dir = model_output_path,
-        num_train_epochs = args.train_num_epochs,
+        num_train_epochs = args.max_steps,
         per_device_train_batch_size = args.train_batch_size,
         learning_rate=args.train_learning_rate,
         batch_sampler=BatchSamplers.NO_DUPLICATES,
-        logging_strategy="epoch",
-        eval_on_start=True,
-        eval_strategy="epoch",
-        save_strategy="epoch",
-        save_total_limit=2,
+        logging_strategy="steps",
+        logging_steps=2,
+        eval_strategy="steps",
+        eval_steps=2,
+        save_strategy="steps",
+        eval_steps=2,
+        save_total_limit=2, # best and latest
         load_best_model_at_end=True,
         metric_for_best_model="eval_cosine_mrr@10",
         greater_is_better=True
