@@ -13,7 +13,7 @@ import logging
 import sys
 import os 
 
-from finetune.utils.extract_dataset import extract_dataset
+from utils.extract_dataset import extract_dataset
 
 TRAINING_LOG_FILE = os.getenv("TRAINING_LOG_FILE", "./results/training_log.log")
 
