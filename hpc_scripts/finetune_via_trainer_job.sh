@@ -14,10 +14,10 @@
 
 export WORKDIR="/space/partner/nrcan/geobase/work/oatt/dev/semanticsearch"
 export EXP_NAME="all-mpnet-base-v2-finetune-test"
-export TRAINING_LOG_FILE="./results/finetune_via_trainer/${EXP_NAME}"
+export TRAINING_LOG_FILE="${WORKDIR}/results/finetune_via_trainer/${EXP_NAME}"
 
 cd $WORKDIR
-mkdir $TRAINING_LOG_FILE
+mkdir -p $TRAINING_LOG_FILE
 
 source /space/partner/nrcan/geobase/work/oatt/opt/miniconda3/etc/profile.d/conda.sh 
 conda activate semantic-finetune
