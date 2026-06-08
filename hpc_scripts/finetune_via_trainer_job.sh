@@ -12,19 +12,20 @@
 #SBATCH --time=02:00:00
 #SBATCH --comment="image=registry.maze.science.gc.ca/ssc-hpcs/generic-job:ubuntu22.04"
 
-cd /space/partner/nrcan/geobase/work/oatt/dev/semanticsearch
+export WORKDIR="/space/partner/nrcan/geobase/work/oatt/dev/semanticsearch"
+export EXP_NAME="all-mpnet-base-v2-finetune-test"
+export TRAINING_LOG_FILE="./results/finetune_via_trainer/${EXP_NAME}"
+
+cd $WORKDIR
 
 source /space/partner/nrcan/geobase/work/oatt/opt/miniconda3/etc/profile.d/conda.sh 
 conda activate semantic-finetune
 
-export EXP_NAME="all-mpnet-base-v2-finetune-test"
-export TRAINING_LOG_FILE="./results/finetune_via_trainer/${EXP_NAME}"
-
 python code/src/finetune/finetune_via_trainer.py \
-    --train_data_path="./data/processed-se/train.parquet" \
-    --eval_data_path="./data/processed-se/eval.parquet" \
+    --train_data_path="${WORKDIR}/data/processed-se/train.parquet" \
+    --eval_data_path="${WORKDIR}/data/processed-se/eval.parquet" \
     --model_name="sentence-transformers/all-mpnet-base-v2" \
-    --model_save_directory="./results/finetune_via_trainer/${EXP_NAME}/model" \
+    --model_save_directory="${WORKDIR}/results/finetune_via_trainer/${EXP_NAME}/model" \
     --data_anchor_column="query_en" \
     --data_doc_column="text_en" \
     --data_restrict_num_records_to="100" \
