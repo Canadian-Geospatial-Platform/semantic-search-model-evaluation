@@ -1,8 +1,8 @@
 #!/bin/bash
 #SBATCH --export=USER,LOGNAME,HOME,MAIL,PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 #SBATCH --job-name=semantic_finetune_gpu_job
-#SBATCH --output=~/%x-%j.out
-#SBATCH --error=~/%x-%j.err
+#SBATCH --output=$HOME/%x-%j.out
+#SBATCH --error=$HOME/%x-%j.err
 #SBATCH --no-requeue
 #SBATCH --qos=low
 #SBATCH --account=nrcan_geobase__gpu_a100
