@@ -30,7 +30,7 @@ def main():
     args = parse_args()
 
     # Load data
-    df = load_data(args.input_data_dir)
+    df = load_data_and_combine(args.input_data_dir)
 
     logger.info("Complete preprocessing disabled. Applying preprocessing for natural language processing and training preparation without feature engineering.")
     
