@@ -18,8 +18,8 @@ def parse_args():
 
     parser.add_argument("--input-data-dir", type=str, help="Path to the input data directory containing the raw datasets in parquet format")
     parser.add_argument("--output-data-dir", type=str, help="Path to the output directory where the preprocessed data will be saved in parquet")
-    parser.add_argument("--base-column-name", type=str, default="text_en" help="Column in input data to use as basis for synthetic query. Default: 'text_en'")
-    parser.add_argument("--new-column-name", type=str, default="query_en" help="New column name under which to save the synthetic queries. Default: 'query_en'")
+    parser.add_argument("--base-column-name", type=str, default="text_en", help="Column in input data to use as basis for synthetic query. Default: 'text_en'")
+    parser.add_argument("--new-column-name", type=str, default="query_en", help="New column name under which to save the synthetic queries. Default: 'query_en'")
     
     return parser.parse_args()
 
