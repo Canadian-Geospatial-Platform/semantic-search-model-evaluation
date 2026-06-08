@@ -15,13 +15,13 @@ import os
 
 from utils.extract_dataset import extract_dataset
 
-TRAINING_LOG_FILE = os.getenv("TRAINING_LOG_FILE", "./results") + "/training_log.log"
+LOGGER_OUTPUT = os.getenv("TRAINING_LOG_FILE", "./results") + "/training_log.log"
 
 # Configure logging to file and console
 logging.basicConfig(level=logging.INFO, 
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     handlers=[
-                        logging.FileHandler(TRAINING_LOG_FILE),
+                        logging.FileHandler(LOGGER_OUTPUT),
                         logging.StreamHandler()
                     ])
 logger = logging.getLogger(__name__)
@@ -150,7 +150,6 @@ def main(args):
         batch_sampler=BatchSamplers.NO_DUPLICATES,
         logging_first_step=True,
         logging_strategy="epoch",
-        log_level="info",
         eval_on_start=True,
         eval_strategy="epoch",
         save_strategy="epoch",
@@ -191,6 +190,12 @@ def main(args):
         logger.info(f"Model saved successfully at {model_output_path}")
     except Exception as e:
         logger.error(f"Error saving model: {e}")
+
+    # 7. Save training logs
+    training_logs_path = os.path.join(args.model_save_directory, "training_logs.csv")
+    df = pd.DataFrame(trainer.state.log_history)
+    df.to_csv(training_logs_path, index=False)
+
 
 if __name__ == '__main__':
     args = parse_args()

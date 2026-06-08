@@ -14,19 +14,19 @@
 
 export WORKDIR="/space/partner/nrcan/geobase/work/oatt/dev/semanticsearch"
 export EXP_NAME="all-mpnet-base-v2-finetune-test"
-export TRAINING_LOG_FILE="${WORKDIR}/results/finetune_via_trainer/${EXP_NAME}"
+export LOGGER_OUTPUT="${WORKDIR}/results/finetune_via_trainer/${EXP_NAME}"
 
 cd $WORKDIR
-mkdir -p $TRAINING_LOG_FILE
+mkdir -p $LOGGER_OUTPUT
 
 source /space/partner/nrcan/geobase/work/oatt/opt/miniconda3/etc/profile.d/conda.sh 
 conda activate semantic-finetune
 
 python code/src/finetune/finetune_via_trainer.py \
-    --train_data_path="${WORKDIR}/data/processed-se/train.parquet" \
-    --eval_data_path="${WORKDIR}/data/processed-se/eval.parquet" \
+    --train_data_path="${WORKDIR}/data/preprocessed-se/with_synthetic_queries/train.parquet" \
+    --eval_data_path="${WORKDIR}/data/preprocessed-se/with_synthetic_queries/eval.parquet" \
     --model_name="sentence-transformers/all-mpnet-base-v2" \
-    --model_save_directory="${WORKDIR}/results/finetune_via_trainer/${EXP_NAME}/model" \
+    --model_save_directory="${WORKDIR}/results/finetune_via_trainer/${EXP_NAME}" \
     --data_anchor_column="query_en" \
     --data_doc_column="text_en" \
     --data_restrict_num_records_to="100" \
