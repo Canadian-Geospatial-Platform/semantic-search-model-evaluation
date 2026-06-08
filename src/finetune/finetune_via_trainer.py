@@ -6,9 +6,9 @@ from sentence_transformers import (
     SentenceTransformerTrainer,
     SentenceTransformerTrainingArguments
 )
-from sentence_transformers.sentence_transformer.losses import MultipleNegativesRankingLoss, GISTEmbedLoss
-from sentence_transformers.sentence_transformer.training_args import BatchSamplers
-from sentence_transformers.sentence_transformer.evaluation import InformationRetrievalEvaluator
+from sentence_transformers.losses import MultipleNegativesRankingLoss, GISTEmbedLoss
+from sentence_transformers.training_args import BatchSamplers
+from sentence_transformers.evaluation import InformationRetrievalEvaluator
 import logging
 import sys
 import os 
