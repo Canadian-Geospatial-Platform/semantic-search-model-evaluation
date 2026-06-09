@@ -15,7 +15,7 @@ import os
 
 from utils.extract_dataset import extract_dataset
 
-LOGGER_OUTPUT = os.getenv("TRAINING_LOG_FILE", "./results") + "/logger_output.log"
+LOGGER_OUTPUT = os.getenv("LOGGER_OUTPUT", "./results") + "/logger_output.log"
 
 # Configure logging to file and console
 logging.basicConfig(level=logging.INFO, 
