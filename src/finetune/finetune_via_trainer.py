@@ -42,8 +42,9 @@ def parse_args():
     parser.add_argument("--data_restrict_num_records_to", type=int, default=None, help="If not None, restricts number of records in training dataset to the number specified")
     
     # training specific
-    parser.add_argument("--train_max_steps", type=int, default=64, help="Number of steps to run for. Default is 64.")
+    parser.add_argument("--train_max_steps", type=int, default=1024, help="Number of steps to run for. Default is 1024.")
     parser.add_argument("--train_batch_size", type=int, default=32, help="Batch size for training. Default is 32.")
+    parser.add_argument("--train_logging_steps", type=int, default=64, help="Batch size for training. Default is 32.")
     parser.add_argument("--train_learning_rate", type=float, default=2e-5, help="Learning rate for training. Default is 2e-5.")
     parser.add_argument("--train_losstype", type=str, default="MNRL", help="Loss function to use for training. Options are 'MNRL' for MultipleNegativesRankingLoss and 'GIST' for GISTEmbedLoss. Default is 'MNRL'.")
 
@@ -132,7 +133,7 @@ def main(args):
     logger.info(f"Set up model output path: {model_output_path}")
     
     # 4. INITIALIZE TRAINING ARGUMENTS AND LOSS
-    logger.info(f"Setting up training arguments with loss type: {args.train_losstype}, learning rate: {args.train_learning_rate}, batch size: {args.train_batch_size}, and number of epochs: {args.train_num_epochs}")
+    logger.info(f"Setting up training arguments with loss type: {args.train_losstype}, learning rate: {args.train_learning_rate}, batch size: {args.train_batch_size}, and number of steps: {args.train_max_steps}")
     # MultipleNegativesRankingLoss
     if args.train_losstype == "MNRL":
         train_loss = MultipleNegativesRankingLoss(model)
@@ -144,16 +145,16 @@ def main(args):
 
     training_args = SentenceTransformerTrainingArguments(
         output_dir = model_output_path,
-        num_train_epochs = args.max_steps,
+        num_train_epochs = args.train_max_steps,
         per_device_train_batch_size = args.train_batch_size,
         learning_rate=args.train_learning_rate,
         batch_sampler=BatchSamplers.NO_DUPLICATES,
         logging_strategy="steps",
-        logging_steps=2,
+        logging_steps=args.train_logging_steps,
         eval_strategy="steps",
-        eval_steps=2,
+        eval_steps=args.train_logging_steps,
         save_strategy="steps",
-        eval_steps=2,
+        save_steps=args.train_logging_steps,
         save_total_limit=2, # best and latest
         load_best_model_at_end=True,
         metric_for_best_model="eval_cosine_mrr@10",
@@ -174,6 +175,7 @@ def main(args):
         model=model,
         args=training_args,
         train_dataset=train_dataset,
+        eval_dataset=eval_dataset,
         loss=train_loss,
         evaluator=ir_evaluator,
     )
@@ -198,6 +200,7 @@ def main(args):
     # 7. Save training logs
     training_logs_path = os.path.join(args.model_save_directory, "training_logs.csv")
     df = pd.DataFrame(trainer.state.log_history)
+    df = df.groupby(["step", "epoch"], as_index=False).first()
     df.to_csv(training_logs_path, index=False)
 
 
@@ -205,16 +208,3 @@ if __name__ == '__main__':
     args = parse_args()
 
     main(args)
-    
-# Example usage:
-#     python finetune_on_columns.py \
-#         --train_data_path data/train.parquet \
-#         --eval_data_path data/eval.parquet \
-#         --model_name sentence-transformers/all-MiniLM-L6-v2 \
-#         --model_save_directory ./models \
-#         --anchor_column features_properties_title_en \
-#         --doc_column features_properties_text_en \
-#         --train_num_epochs 2 \
-#         --train_batch_size 32 \
-#         --train_learning_rate 2e-5 \
-#         --train_losstype MNRL

@@ -31,5 +31,6 @@ python code/src/finetune/finetune_via_trainer.py \
     --data_doc_column="text_en" \
     --data_restrict_num_records_to="100" \
     --train_max_steps="8" \
+    --train_logging_steps="2" \
     --train_losstype="MNRL"
     # --data_mix_languages \  # uncomment to expand dataset for multilingual training
