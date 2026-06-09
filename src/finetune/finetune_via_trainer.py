@@ -8,7 +8,7 @@ from sentence_transformers import (
 )
 from sentence_transformers.losses import MultipleNegativesRankingLoss, GISTEmbedLoss
 from sentence_transformers.training_args import BatchSamplers
-from sentence_transformers.evaluation import InformationRetrievalEvaluator
+from utils.ir_evaluate import get_ir_evaluator
 import logging
 import sys
 import os 
@@ -44,44 +44,12 @@ def parse_args():
     # training specific
     parser.add_argument("--train_max_steps", type=int, default=1024, help="Number of steps to run for. Default is 1024.")
     parser.add_argument("--train_batch_size", type=int, default=32, help="Batch size for training. Default is 32.")
-    parser.add_argument("--train_logging_steps", type=int, default=64, help="Batch size for training. Default is 32.")
+    parser.add_argument("--train_logging_steps", type=int, default=64, help="Number of steps after which to log train loss and eval metrics. Default is 64.")
     parser.add_argument("--train_learning_rate", type=float, default=2e-5, help="Learning rate for training. Default is 2e-5.")
     parser.add_argument("--train_losstype", type=str, default="MNRL", help="Loss function to use for training. Options are 'MNRL' for MultipleNegativesRankingLoss and 'GIST' for GISTEmbedLoss. Default is 'MNRL'.")
 
     return parser.parse_args()
 
-def extract_query_coprus_relevant_docs(dataset, query_col, doc_col):
-    '''
-    Extracts queries, corpus, and relevant documents from the evaluation dataset for InformationRetrievalEvaluator.
-
-    Args:
-    - dataset: HuggingFace Dataset object containing the evaluation data
-    - query_col: Name of the column to use as query (anchor)
-    - doc_col: Name of the column to use as document
-
-    Returns:
-    - queries: Dictionary mapping query IDs to query strings
-    - corpus: Dictionary mapping document IDs to document strings
-    - relevant_docs: Dictionary mapping query IDs to sets of relevant document IDs
-    '''
-    queries = {}
-    corpus = {}
-    relevant_docs = {}
-
-    
-    for idx in range(len(dataset)):
-        row = dataset[idx]
-        q_id = idx
-        d_id = idx
-
-        queries[q_id] = row[query_col]
-        corpus[d_id] = row[doc_col]
-
-        if q_id not in relevant_docs:
-            relevant_docs[q_id] = set()
-        relevant_docs[q_id].add(d_id)
-
-    return queries, corpus, relevant_docs
 
 def main(args):
     logger.info(f"Starting fine-tuning for {args.model_name}")
@@ -122,6 +90,8 @@ def main(args):
     logger.info(f"Preparing training dataset with mix_languages set to {args.data_mix_languages}")
     train_dataset = extract_dataset(train_df, anchor_col, doc_col, mix_languages=args.data_mix_languages)
     eval_dataset = extract_dataset(eval_df, anchor_col, doc_col, mix_languages=args.data_mix_languages)
+    logger.info(f"Train data shape: {train_df.shape}")
+    logger.info(f"Eval data shape: {eval_df.shape}")
 
     # 3. INITIALIZE MODEL
     logger.info(f"Initializing model: {args.model_name}")
@@ -145,7 +115,7 @@ def main(args):
 
     training_args = SentenceTransformerTrainingArguments(
         output_dir = model_output_path,
-        num_train_epochs = args.train_max_steps,
+        max_steps = args.train_max_steps,
         per_device_train_batch_size = args.train_batch_size,
         learning_rate=args.train_learning_rate,
         batch_sampler=BatchSamplers.NO_DUPLICATES,
@@ -163,12 +133,7 @@ def main(args):
 
     # Configure InformationRetrievalEvaluator for the eval dataset
     logger.info("Extracting queries, corpus, and relevant documents for evaluation")
-    eval_queries, eval_corpus, eval_rel_docs = extract_query_coprus_relevant_docs(eval_dataset, 'anchor', 'doc')
-    ir_evaluator = InformationRetrievalEvaluator(
-        queries=eval_queries, #q_id:query
-        corpus=eval_corpus, #d_id:doc
-        relevant_docs=eval_rel_docs, #q_id -> set(d_id)
-    )
+    ir_evaluator = get_ir_evaluator(eval_dataset, 'anchor', 'doc')
     
     logger.info("Setting up trainer with model, train and eval datasets (subset of only anchor and doc columns), loss function, and evaluator")
     trainer = SentenceTransformerTrainer(
