@@ -90,8 +90,8 @@ def main(args):
     logger.info(f"Preparing training dataset with mix_languages set to {args.data_mix_languages}")
     train_dataset = extract_dataset(train_df, anchor_col, doc_col, mix_languages=args.data_mix_languages)
     eval_dataset = extract_dataset(eval_df, anchor_col, doc_col, mix_languages=args.data_mix_languages)
-    logger.info(f"Train data shape: {train_df.shape}")
-    logger.info(f"Eval data shape: {eval_df.shape}")
+    logger.info(f"Train data shape: {train_dataset.shape}")
+    logger.info(f"Eval data shape: {eval_dataset.shape}")
 
     # 3. INITIALIZE MODEL
     logger.info(f"Initializing model: {args.model_name}")
