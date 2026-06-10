@@ -29,7 +29,7 @@ def run_performance_evaluation(model, query2doc_df, query_col, doc_col, addition
     query2doc_dataset = extract_dataset(query2doc_df, query_col, doc_col, mix_languages=False)
     additional_corpus_datasets = [extract_dataset(df, "features_properties_id", doc_col, mix_languages=False) for df in additional_corpus_dfs]
 
-    ir_evaluator = get_ir_evaluator(query2doc_dataset, query_col, doc_col, additional_corpus_datasets, **ir_evaluator_kwargs)
+    ir_evaluator = get_ir_evaluator(query2doc_dataset, "anchor", "doc", additional_corpus_datasets, **ir_evaluator_kwargs)
 
     logger.info("Starting performance evaluation on model")
     results = ir_evaluator(model)
