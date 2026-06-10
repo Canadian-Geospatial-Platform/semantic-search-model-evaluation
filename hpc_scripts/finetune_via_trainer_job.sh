@@ -16,6 +16,9 @@ export WORKDIR="/space/partner/nrcan/geobase/work/oatt/dev/semanticsearch"
 export EXP_NAME="all-mpnet-base-v2-finetune-test"
 export LOGGER_OUTPUT="${WORKDIR}/results/finetune_via_trainer/${EXP_NAME}"
 
+export http_proxy=http://webproxy.science.gc.ca:8888/
+export https_proxy=http://webproxy.science.gc.ca:8888/
+
 cd $WORKDIR
 mkdir -p $LOGGER_OUTPUT
 
