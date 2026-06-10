@@ -1,7 +1,7 @@
 from sentence_transformers.evaluation import InformationRetrievalEvaluator
 from sentence_transformers import SentenceTransformer
 
-def extract_query_coprus_relevant_docs(dataset, query_col, doc_col, additional_corpus_datasets=[]):
+def extract_query_corpus_relevant_docs(dataset, query_col, doc_col, additional_corpus_datasets=[]):
     '''
     Extracts queries, corpus, and relevant documents from the evaluation dataset for InformationRetrievalEvaluator.
 
@@ -39,7 +39,8 @@ def extract_query_coprus_relevant_docs(dataset, query_col, doc_col, additional_c
     return queries, corpus, relevant_docs
 
 def get_ir_evaluator(ds, anchor_col="anchor", doc_col="doc", additional_corpus_datasets=[], **ir_evaluator_kwargs):
-    eval_queries, eval_corpus, eval_rel_docs = extract_query_coprus_relevant_docs(ds, anchor_col, doc_col, additional_corpus_datasets)
+    print(ds)
+    eval_queries, eval_corpus, eval_rel_docs = extract_query_corpus_relevant_docs(ds, anchor_col, doc_col, additional_corpus_datasets)
     return InformationRetrievalEvaluator(
         queries=eval_queries, #q_id:query
         corpus=eval_corpus, #d_id:doc

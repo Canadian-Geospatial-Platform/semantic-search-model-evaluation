@@ -38,6 +38,9 @@ def run_performance_evaluation(model, query2doc_df, query_col, doc_col, addition
     return results
 
 def main(args):
+    logger.info("Running performance evaluation script")
+
+    logger.info("Loading datasets")
     if not os.path.isfile(args.query2doc_dataset_path):
         logger.error(f"Unable to locate query-to-document dataset at {args.query2doc_dataset_path}.")
         return
@@ -58,6 +61,7 @@ def main(args):
         extra_dfs.append(pd.read_parquet(filepath))
     
     # loading model
+    logger.info(f"Loading model: {args.model_name}")
     model = SentenceTransformer(args.model_name)
 
     # running performance evaluation
@@ -70,7 +74,7 @@ def main(args):
         'en': results_en,
         'fr': results_fr
     }
-    logger.info("Performance results for both English and French queries acquired.")
+    logger.info("Performance results for both English and French queries acquired. Saving results...")
 
     # saving results
     os.makedirs(args.save_filedir, exist_ok=True)
@@ -88,6 +92,7 @@ def main(args):
     logger.info("Finished generating embeddings. Saving corpus...")
     corpus_path = os.path.join(args.save_filedir, 'document_corpus.parquet')
     full_corpus.to_parquet(corpus_path)  
+    logger.info('Embeddings saved successfully')
 
 
 if __name__ == '__main__':
