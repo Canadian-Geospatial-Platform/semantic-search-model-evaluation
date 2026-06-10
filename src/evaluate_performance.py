@@ -87,6 +87,7 @@ def main(args):
 
     logger.info(f"Generating embeddings for corpus on {args.document_col_name}")
     full_corpus = pd.concat([query2doc_df] + extra_dfs)
+    logger.info(f"Full corpus shape: {full_corpus.shape}")
     full_corpus[f"{args.document_col_name}_embeddings"] = model.encode(full_corpus[args.document_col_name].tolist())
 
     logger.info("Finished generating embeddings. Saving corpus...")
