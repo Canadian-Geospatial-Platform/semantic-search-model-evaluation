@@ -5,8 +5,8 @@ import os
 from sentence_transformers import SentenceTransformer
 import json
 
-from fintetune.utils.extract_dataset import extract_dataset
-from fintetune.utils.ir_evaluate import get_ir_evaluator
+from finetune.utils.extract_dataset import extract_dataset
+from finetune.utils.ir_evaluate import get_ir_evaluator
 
 logger = logging.getLogger(__name__)
 
