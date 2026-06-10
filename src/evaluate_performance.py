@@ -15,7 +15,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--query2doc_dataset_path", type=str, required=True, help="Filepath to .parquet that includes query-to-relevant-document mapping")
-    parser.add_argument("--additional_corpus_filepaths", type=list, default=[], help="List of filepaths to .parquet that need to be included in corpus consideration")
+    parser.add_argument("--additional_corpus_filepaths", type=str, default="[]", help="List of filepaths to .parquet that need to be included in corpus consideration")
     parser.add_argument("--document_col_name", type=str, default="text_en", help="Column in datasets to be used as document representation")
 
     parser.add_argument("--model_name", type=str, required=True, help="Name or local path to model to evaluate")
@@ -44,7 +44,13 @@ def main(args):
     
     query2doc_df = pd.read_parquet(args.query2doc_dataset_path)
 
-    extra_dfs=[]
+    try:
+        args.additional_corpus_filepaths = json.loads(args.additional_corpus_filepaths)
+    except Exception:
+        logger.warning(f"Failed to parse additional corpus filepaths. Expected to receive a stringified list. Setting to [].")
+        args.additional_corpus_filepaths = []
+    
+    extra_dfs=[]    
     for filepath in args.additional_corpus_filepaths:
         if not os.path.isfile(filepath):
             logger.warning(f"Unable to locate additional corpus dataset at {filepath}. Skipping...")
