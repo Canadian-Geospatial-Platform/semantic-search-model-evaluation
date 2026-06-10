@@ -133,7 +133,8 @@ def main(args):
 
     # Configure InformationRetrievalEvaluator for the eval dataset
     logger.info("Extracting queries, corpus, and relevant documents for evaluation")
-    ir_evaluator = get_ir_evaluator(eval_dataset, 'anchor', 'doc')
+    # evaluation corpus is composed of docs from train and eval
+    ir_evaluator = get_ir_evaluator(eval_dataset, 'anchor', 'doc', additional_corpus_datasets=[train_dataset])
     
     logger.info("Setting up trainer with model, train and eval datasets (subset of only anchor and doc columns), loss function, and evaluator")
     trainer = SentenceTransformerTrainer(

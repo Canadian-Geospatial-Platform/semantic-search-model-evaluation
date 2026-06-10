@@ -20,7 +20,6 @@ from data_processing.utils.auxilliary_preprocessing import (
     deduplicate_data,
 )
 
-
 class TestLoadData:
     """Tests for load_data function."""
     
@@ -30,11 +29,16 @@ class TestLoadData:
         parquet_file = tmp_path / "test.parquet"
         df.to_parquet(parquet_file, index=False)
         
-        result = load_data(str(tmp_path))
+        result, filenames = load_data(str(tmp_path))
         
-        assert isinstance(result, pd.DataFrame)
-        assert result.shape == (3, 2)
-        pd.testing.assert_frame_equal(result, df)
+        assert len(filenames) == 1
+        assert filenames[0] == "test.parquet"
+
+        assert isinstance(result, list)
+        assert len(result) == 1
+        assert isinstance(result[0], pd.DataFrame)
+        assert result[0].shape == (3, 2)
+        pd.testing.assert_frame_equal(result[0], df)
     
     def test_load_data_multiple_parquets(self, tmp_path):
         """Test loading multiple parquet files."""
@@ -45,11 +49,16 @@ class TestLoadData:
         df1.to_parquet(parquet_file1, index=False)
         df2.to_parquet(parquet_file2, index=False)
         
-        result = load_data(str(tmp_path))
+        result, filenames = load_data(str(tmp_path))
         
-        assert isinstance(result, pd.DataFrame)
-        assert result.shape[0] == 4
-        assert list(result.columns) == ["col1", "col2"]
+        assert len(filenames) == 2
+        assert "test1.parquet" in filenames
+        assert "test2.parquet" in filenames
+
+        assert isinstance(result, list)
+        assert len(result) == 2
+        pd.testing.assert_frame_equal(result[0], df1)
+        pd.testing.assert_frame_equal(result[1], df2)
     
     def test_load_data_no_parquet_files(self, tmp_path):
         """Test error when no parquet files are found."""
