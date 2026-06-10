@@ -88,7 +88,8 @@ def main(args):
     logger.info(f"Generating embeddings for corpus on {args.document_col_name}")
     full_corpus = pd.concat([query2doc_df] + extra_dfs)
     logger.info(f"Full corpus shape: {full_corpus.shape}")
-    full_corpus[f"{args.document_col_name}_embeddings"] = model.encode(full_corpus[args.document_col_name].tolist())
+    embeddings = model.encode(full_corpus[args.document_col_name].tolist())
+    full_corpus[f"{args.document_col_name}_embeddings"] = list(embeddings)
 
     logger.info("Finished generating embeddings. Saving corpus...")
     corpus_path = os.path.join(args.save_filedir, 'document_corpus.parquet')
