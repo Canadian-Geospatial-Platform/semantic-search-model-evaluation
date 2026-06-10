@@ -8,8 +8,11 @@ import json
 from finetune.utils.extract_dataset import extract_dataset
 from finetune.utils.ir_evaluate import get_ir_evaluator
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger(__name__)
-
 
 def parse_args():
     parser = argparse.ArgumentParser()
