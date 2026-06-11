@@ -81,7 +81,7 @@ def main(args):
     results_fr_df = run_performance_evaluation(model, query2doc_df, 'query_fr', args.document_col_name, extra_dfs, args.num_trials, write_csv=False)
     results_fr_df['lang'] = 'fr'
 
-    results_combined = pd.concat(results_en_df, results_fr_df).reset_index()
+    results_combined = pd.concat([results_en_df, results_fr_df]).reset_index()
     logger.info("Performance results for both English and French queries acquired.")
 
     summary_en = results_combined[results_combined['lang'] == 'en']["cosine_mrr@10"].agg(
