@@ -41,6 +41,7 @@ def run_performance_evaluation(model, query2doc_df, query_col, doc_col, addition
     results_list = []
     for trial_i in range(num_trials):
         ir_evaluator.write_predictions = (trial_i == 0) # only save predictions for first trial run
+        ir_evaluator.predictions_file = f"predictions_trial_{trial_i}.jsonl"
         # suppress stout of InformationRetrievalEvaluator
         with open(os.devnull, "w") as f, contextlib.redirect_stdout(f):
             results = ir_evaluator(model, output_path=output_path)
