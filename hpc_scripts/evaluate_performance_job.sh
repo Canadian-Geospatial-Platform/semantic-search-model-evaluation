@@ -30,6 +30,6 @@ echo Starting evaluation on text_en
 python code/src/evaluate_performance.py \
     --query2doc_dataset_path="${WORKDIR}/data/preprocessed-se/with_synthetic_queries/test.parquet" \
     --additional_corpus_filepaths='["'"${WORKDIR}"'/data/preprocessed-se/with_synthetic_queries/train.parquet", "'"${WORKDIR}"'/data/preprocessed-se/with_synthetic_queries/eval.parquet"]' \
-    --document_col_name="[\"text_en\", \"text_seq\", \"text_para\"]" \
+    --document_col_names='["text_en", "text_seq", "text_para"]' \
     --model_path="${MODEL_PATH}" \
     --save_filedir="${LOGGER_OUTPUT}/performance_evaluation/"

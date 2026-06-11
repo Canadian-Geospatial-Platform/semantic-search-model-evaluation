@@ -22,7 +22,7 @@ def parse_args():
 
     parser.add_argument("--query2doc_dataset_path", type=str, required=True, help="Filepath to .parquet that includes query-to-relevant-document mapping")
     parser.add_argument("--additional_corpus_filepaths", type=str, default="[]", help="List of filepaths to .parquet that need to be included in corpus consideration")
-    parser.add_argument("--document_col_names", type=list, default="[\"text_en\", \"text_seq\", \"text_para\"]", help="Column in datasets to be used as document representation. Default is [\"text_en\", \"text_seq\", \"text_para\"]")
+    parser.add_argument("--document_col_names", type=list, default='["text_en", "text_seq", "text_para"]', help="Column in datasets to be used as document representation. Default is [\"text_en\", \"text_seq\", \"text_para\"]")
     parser.add_argument("--model_path", type=str, required=True, help="Name or local path to model to evaluate")
     parser.add_argument("--save_filedir", type=str, required=True, help="Filepath directory to save evaluation results and corpus embeddings to")
     
@@ -94,6 +94,9 @@ def main(args):
         results_fr_df['lang'] = 'fr'
         results_fr_df['document_repr'] = doc_col_name
         all_results_list.append(results_fr_df)
+
+    if len(all_results_list) == 0:
+        return
 
     results_combined = pd.concat(all_results_list).reset_index()
     logger.info(f"Summary of results: {results_combined}")
