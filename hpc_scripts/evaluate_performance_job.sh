@@ -14,7 +14,7 @@
 export WORKDIR="/space/partner/nrcan/geobase/work/oatt/dev/semanticsearch"
 export MODEL_NAME="all-mpnet-base-v2"
 export MODEL_PATH="sentence-transformers/${MODEL_NAME}"
-export EXP_NAME="${MODEL_NAME}-finetune-test"
+export EXP_NAME="${MODEL_NAME}-baseline"
 export LOGGER_OUTPUT="${WORKDIR}/results/finetune_via_trainer/${EXP_NAME}"
 
 export http_proxy=http://webproxy.science.gc.ca:8888/
