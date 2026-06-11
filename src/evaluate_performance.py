@@ -5,7 +5,6 @@ import argparse
 import os
 from sentence_transformers import SentenceTransformer
 import json
-import contextlib
 
 from finetune.utils.extract_dataset import extract_dataset
 from finetune.utils.ir_evaluate import get_ir_evaluator
@@ -15,6 +14,8 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
+
+logging.getLogger("sentence_transformers.evaluation.InformationRetrievalEvaluator").setLevel(logging.ERROR)
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -42,9 +43,7 @@ def run_performance_evaluation(model, query2doc_df, query_col, doc_col, addition
     for trial_i in range(num_trials):
         ir_evaluator.write_predictions = (trial_i == 0) # only save predictions for first trial run
         ir_evaluator.predictions_file = f"predictions_trial_{trial_i}.jsonl"
-        # suppress stout of InformationRetrievalEvaluator
-        with open(os.devnull, "w") as f, contextlib.redirect_stdout(f):
-            results = ir_evaluator(model, output_path=output_path)
+        results = ir_evaluator(model, output_path=output_path)
         results_list.append(results)
     logger.info("Performance evaluation completed.")
 
@@ -81,11 +80,11 @@ def main(args):
 
     # running performance evaluation
     logger.info("Running performance evaluation on English queries")
-    results_en_df = run_performance_evaluation(model, query2doc_df, 'query_en', args.document_col_name, extra_dfs, args.num_trials, output_path=args.save_filedir, show_progress_bar=True)
+    results_en_df = run_performance_evaluation(model, query2doc_df, 'query_en', args.document_col_name, extra_dfs, args.num_trials, output_path=args.save_filedir)
     results_en_df['lang'] = 'en'
     
     logger.info("Running performance evaluation on French queries")
-    results_fr_df = run_performance_evaluation(model, query2doc_df, 'query_fr', args.document_col_name, extra_dfs, args.num_trials, output_path=args.save_filedir, show_progress_bar=True)
+    results_fr_df = run_performance_evaluation(model, query2doc_df, 'query_fr', args.document_col_name, extra_dfs, args.num_trials, output_path=args.save_filedir)
     results_fr_df['lang'] = 'fr'
 
     results_combined = pd.concat([results_en_df, results_fr_df]).reset_index()
