@@ -104,7 +104,7 @@ def main(args):
 
     results_path = os.path.join(args.save_filedir, 'results.json')
     with open(results_path, 'w') as file:
-        json.dump(results, file)
+        json.dump(results_combined, file)
     
     logger.info('Performance evaluation results saved successfully')
 
