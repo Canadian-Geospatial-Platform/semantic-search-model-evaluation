@@ -5,7 +5,6 @@ import argparse
 import os
 from sentence_transformers import SentenceTransformer
 import json
-from tqdm import tqdm
 
 from finetune.utils.extract_dataset import extract_dataset
 from finetune.utils.ir_evaluate import get_ir_evaluator
@@ -23,32 +22,25 @@ def parse_args():
 
     parser.add_argument("--query2doc_dataset_path", type=str, required=True, help="Filepath to .parquet that includes query-to-relevant-document mapping")
     parser.add_argument("--additional_corpus_filepaths", type=str, default="[]", help="List of filepaths to .parquet that need to be included in corpus consideration")
-    parser.add_argument("--document_col_name", type=str, default="text_en", help="Column in datasets to be used as document representation")
+    parser.add_argument("--document_col_names", type=list, default="[\"text_en\", \"text_seq\", \"text_para\"]", help="Column in datasets to be used as document representation. Default is [\"text_en\", \"text_seq\", \"text_para\"]")
     parser.add_argument("--model_path", type=str, required=True, help="Name or local path to model to evaluate")
     parser.add_argument("--save_filedir", type=str, required=True, help="Filepath directory to save evaluation results and corpus embeddings to")
     
-    parser.add_argument("--num_trials", type=int, default=5, help="Number of trials to run IR Evaluator. Default: 5")
     parser.add_argument("--generate_corpus_embeddings", action="store_true", default=False, help="Column in datasets to be used as document representation")
 
     return parser.parse_args()
 
-def run_performance_evaluation(model, query2doc_df, query_col, doc_col, additional_corpus_dfs, num_trials, output_path=None, **ir_evaluator_kwargs):
+def run_performance_evaluation(model, query2doc_df, query_col, doc_col, additional_corpus_dfs, output_path=None, **ir_evaluator_kwargs):
     # extracting huggingface dataset, set mixLanguages to False to disable dataset expansion
     query2doc_dataset = extract_dataset(query2doc_df, query_col, doc_col, mix_languages=False)
     additional_corpus_datasets = [extract_dataset(df, "features_properties_id", doc_col, mix_languages=False) for df in additional_corpus_dfs]
 
     ir_evaluator = get_ir_evaluator(query2doc_dataset, "anchor", "doc", additional_corpus_datasets, **ir_evaluator_kwargs)
 
-    # logger.info(f"Starting performance evaluation on model for {num_trials} trials")
-    results_list = []
-    for trial_i in tqdm(range(num_trials), desc="Trials"):
-        ir_evaluator.write_predictions = (trial_i == 0) # only save predictions for first trial run
-        ir_evaluator.predictions_file = f"predictions_trial_{trial_i}.jsonl"
-        results = ir_evaluator(model, output_path=output_path)
-        results_list.append(results)
+    results = ir_evaluator(model, output_path=output_path)
     logger.info("Performance evaluation completed.")
 
-    return pd.DataFrame(results_list)
+    return pd.DataFrame([results])
 
 def main(args):
     logger.info("Running performance evaluation script")
@@ -80,29 +72,31 @@ def main(args):
     model = SentenceTransformer(args.model_path)
 
     # running performance evaluation
-    logger.info("Running performance evaluation on English queries")
-    results_en_df = run_performance_evaluation(model, query2doc_df, 'query_en', args.document_col_name, extra_dfs, args.num_trials, output_path=args.save_filedir)
-    results_en_df['lang'] = 'en'
     
-    logger.info("Running performance evaluation on French queries")
-    results_fr_df = run_performance_evaluation(model, query2doc_df, 'query_fr', args.document_col_name, extra_dfs, args.num_trials, output_path=args.save_filedir)
-    results_fr_df['lang'] = 'fr'
+    logger.info(f"Loading document names: {args.document_col_names}")
+    try:
+        args.document_col_names = json.loads(args.document_col_names)
+    except Exception:
+        logger.warning(f"Failed to parse document_col_names. Expected to receive a stringified list. Setting to [].")
+        args.document_col_names = []
+    
+    all_results_list = []
+    for doc_col_name in args.document_col_names:
+        logger.info(f"Running performance evaluation on {doc_col_name}.")
+        logger.info("Query: EN")
+        results_en_df = run_performance_evaluation(model, query2doc_df, 'query_en', doc_col_name, extra_dfs, output_path=args.save_filedir, write_predictions=True)
+        results_en_df['lang'] = 'en'
+        results_en_df['document_repr'] = doc_col_name
+        all_results_list.append(results_en_df)
+        
+        logger.info("Query: FR")
+        results_fr_df = run_performance_evaluation(model, query2doc_df, 'query_fr', doc_col_name, extra_dfs, output_path=args.save_filedir, write_predictions=True)
+        results_fr_df['lang'] = 'fr'
+        results_fr_df['document_repr'] = doc_col_name
+        all_results_list.append(results_fr_df)
 
-    results_combined = pd.concat([results_en_df, results_fr_df]).reset_index()
-    logger.info("Performance results for both English and French queries acquired.")
-
-    summary_en = results_combined[results_combined['lang'] == 'en']["cosine_mrr@10"].agg(
-        mean="mean",
-        stderr=lambda x: x.std(ddof=1) / np.sqrt(len(x))
-    )
-    logger.info(f"Summary query_en using {args.document_col_name} for doc representation: {summary_en}")
-
-    summary_fr = results_combined[results_combined['lang'] == 'fr']["cosine_mrr@10"].agg(
-        mean="mean",
-        stdev=lambda x: x.std(ddof=1),
-        stderr=lambda x: x.std(ddof=1) / np.sqrt(len(x))
-    )
-    logger.info(f"Summary query_fr using {args.document_col_name} for doc representation: {summary_fr}")
+    results_combined = pd.concat(all_results_list).reset_index()
+    logger.info(f"Summary of results: {results_combined}")
                 
     # saving results
     logger.info("Saving results...")
