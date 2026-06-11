@@ -5,6 +5,7 @@ import argparse
 import os
 from sentence_transformers import SentenceTransformer
 import json
+import torch
 
 from finetune.utils.extract_dataset import extract_dataset
 from finetune.utils.ir_evaluate import get_ir_evaluator
@@ -39,7 +40,8 @@ def run_performance_evaluation(model, query2doc_df, query_col, doc_col, addition
 
     results = ir_evaluator(model, output_path=output_path)
     logger.info("Performance evaluation completed.")
-
+    
+    del ir_evaluator
     return pd.DataFrame([results])
 
 def main(args):
@@ -89,12 +91,13 @@ def main(args):
         results_en_df['document_repr'] = doc_col_name
         results_en_df = results_en_df.rename(columns=lambda col: col[col.find("cosine"):] if "cosine" in col else col)
         all_results_list.append(results_en_df)
-        
+
         logger.info("Query: FR")
         results_fr_df = run_performance_evaluation(model, query2doc_df, 'query_fr', doc_col_name, extra_dfs, output_path=args.save_filedir, write_csv=False, write_predictions=True)
         results_fr_df['lang'] = 'fr'
         results_fr_df['document_repr'] = doc_col_name
         results_fr_df = results_fr_df.rename(columns=lambda col: col[col.find("cosine"):] if "cosine" in col else col)
+
         all_results_list.append(results_fr_df)
 
     if len(all_results_list) == 0:
