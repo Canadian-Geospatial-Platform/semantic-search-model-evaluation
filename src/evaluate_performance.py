@@ -21,9 +21,8 @@ def parse_args():
     parser.add_argument("--query2doc_dataset_path", type=str, required=True, help="Filepath to .parquet that includes query-to-relevant-document mapping")
     parser.add_argument("--additional_corpus_filepaths", type=str, default="[]", help="List of filepaths to .parquet that need to be included in corpus consideration")
     parser.add_argument("--document_col_name", type=str, default="text_en", help="Column in datasets to be used as document representation")
-    parser.add_argument("--model_name", type=str, required=True, help="Name or local path to model to evaluate")
+    parser.add_argument("--model_path", type=str, required=True, help="Name or local path to model to evaluate")
     parser.add_argument("--save_filedir", type=str, required=True, help="Filepath directory to save evaluation results and corpus embeddings to")
-    parser.add_argument("--model_name", type=str, required=True, help="Name or local path to model to evaluate")
     
     parser.add_argument("--num_trials", type=int, default=5, help="Number of trials to run IR Evaluator. Default: 5")
     parser.add_argument("--generate_corpus_embeddings", action="store_true", default=False, help="Column in datasets to be used as document representation")
