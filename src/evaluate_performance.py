@@ -5,6 +5,7 @@ import argparse
 import os
 from sentence_transformers import SentenceTransformer
 import json
+from tqdm import tqdm
 
 from finetune.utils.extract_dataset import extract_dataset
 from finetune.utils.ir_evaluate import get_ir_evaluator
@@ -38,9 +39,9 @@ def run_performance_evaluation(model, query2doc_df, query_col, doc_col, addition
 
     ir_evaluator = get_ir_evaluator(query2doc_dataset, "anchor", "doc", additional_corpus_datasets, **ir_evaluator_kwargs)
 
-    logger.info(f"Starting performance evaluation on model for {num_trials} trials")
+    # logger.info(f"Starting performance evaluation on model for {num_trials} trials")
     results_list = []
-    for trial_i in range(num_trials):
+    for trial_i in tqdm(range(num_trials), desc="Trials"):
         ir_evaluator.write_predictions = (trial_i == 0) # only save predictions for first trial run
         ir_evaluator.predictions_file = f"predictions_trial_{trial_i}.jsonl"
         results = ir_evaluator(model, output_path=output_path)
