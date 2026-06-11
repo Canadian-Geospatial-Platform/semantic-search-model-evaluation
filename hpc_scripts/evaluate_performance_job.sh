@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --export=USER,LOGNAME,HOME,MAIL,PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 #SBATCH --job-name=evaluate_performance_mpnet_base
-#SBATCH --output=/space/partner/nrcan/geobase/work/oatt/dev/semanticsearch/results/finetune_via_trainer/%x-%j.out
+#SBATCH --output=/space/partner/nrcan/geobase/work/oatt/dev/semanticsearch/results/finetune_via_trainer/slurm_logs/%x-%j.out
 #SBATCH --no-requeue
 #SBATCH --qos=low
 #SBATCH --account=nrcan_geobase__gpu_a100
