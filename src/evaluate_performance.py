@@ -6,6 +6,7 @@ import os
 from sentence_transformers import SentenceTransformer
 import json
 import torch
+import gc
 
 from finetune.utils.extract_dataset import extract_dataset
 from finetune.utils.ir_evaluate import get_ir_evaluator
@@ -41,7 +42,10 @@ def run_performance_evaluation(model, query2doc_df, query_col, doc_col, addition
     results = ir_evaluator(model, output_path=output_path)
     logger.info("Performance evaluation completed.")
     
+    # clean up
     del ir_evaluator
+    gc.collect()
+    torch.cuda.empty_cache()
     return pd.DataFrame([results])
 
 def main(args):
