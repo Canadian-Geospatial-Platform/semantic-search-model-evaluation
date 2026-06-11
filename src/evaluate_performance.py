@@ -30,7 +30,7 @@ def parse_args():
 
     return parser.parse_args()
 
-def run_performance_evaluation(model, query2doc_df, query_col, doc_col, additional_corpus_dfs, num_trials, **ir_evaluator_kwargs):
+def run_performance_evaluation(model, query2doc_df, query_col, doc_col, additional_corpus_dfs, num_trials, output_path=None, **ir_evaluator_kwargs):
     # extracting huggingface dataset, set mixLanguages to False to disable dataset expansion
     query2doc_dataset = extract_dataset(query2doc_df, query_col, doc_col, mix_languages=False)
     additional_corpus_datasets = [extract_dataset(df, "features_properties_id", doc_col, mix_languages=False) for df in additional_corpus_dfs]
@@ -43,7 +43,7 @@ def run_performance_evaluation(model, query2doc_df, query_col, doc_col, addition
         ir_evaluator.write_predictions = (trial_i == 0) # only save predictions for first trial run
         # suppress stout of InformationRetrievalEvaluator
         with open(os.devnull, "w") as f, contextlib.redirect_stdout(f):
-            results = ir_evaluator(model)
+            results = ir_evaluator(model, output_path=output_path)
         results_list.append(results)
     logger.info("Performance evaluation completed.")
 
