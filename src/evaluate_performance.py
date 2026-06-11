@@ -69,8 +69,8 @@ def main(args):
         extra_dfs.append(pd.read_parquet(filepath))
     
     # loading model
-    logger.info(f"Loading model: {args.model_name}")
-    model = SentenceTransformer(args.model_name)
+    logger.info(f"Loading model: {args.model_path}")
+    model = SentenceTransformer(args.model_path)
 
     # running performance evaluation
     logger.info("Running performance evaluation on English queries")
