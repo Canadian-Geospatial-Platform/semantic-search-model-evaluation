@@ -84,15 +84,17 @@ def main(args):
     for doc_col_name in args.document_col_names:
         logger.info(f"Running performance evaluation on {doc_col_name}.")
         logger.info("Query: EN")
-        results_en_df = run_performance_evaluation(model, query2doc_df, 'query_en', doc_col_name, extra_dfs, output_path=args.save_filedir, write_predictions=True)
+        results_en_df = run_performance_evaluation(model, query2doc_df, 'query_en', doc_col_name, extra_dfs, output_path=args.save_filedir, write_csv=False, write_predictions=True)
         results_en_df['lang'] = 'en'
         results_en_df['document_repr'] = doc_col_name
+        results_en_df = results_en_df.rename(columns=lambda col: col[col.find("cosine"):] if "cosine" in col else col)
         all_results_list.append(results_en_df)
         
         logger.info("Query: FR")
-        results_fr_df = run_performance_evaluation(model, query2doc_df, 'query_fr', doc_col_name, extra_dfs, output_path=args.save_filedir, write_predictions=True)
+        results_fr_df = run_performance_evaluation(model, query2doc_df, 'query_fr', doc_col_name, extra_dfs, output_path=args.save_filedir, write_csv=False, write_predictions=True)
         results_fr_df['lang'] = 'fr'
         results_fr_df['document_repr'] = doc_col_name
+        results_fr_df = results_fr_df.rename(columns=lambda col: col[col.find("cosine"):] if "cosine" in col else col)
         all_results_list.append(results_fr_df)
 
     if len(all_results_list) == 0:
