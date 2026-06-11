@@ -11,5 +11,5 @@ dependencies:
   - openssl==3.6.3
   - sentence-transformers==5.1.0
   - pip
-  - pip:
-    - -r requirement.txt
+  # - pip:
+  #   - -r requirement.txt
