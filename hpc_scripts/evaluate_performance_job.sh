@@ -26,7 +26,7 @@ mkdir -p $LOGGER_OUTPUT
 source /space/partner/nrcan/geobase/work/oatt/opt/miniconda3/etc/profile.d/conda.sh 
 conda activate semantic-finetune
 
-echo Starting evaluation on text_en
+echo Starting evaluation
 python code/src/evaluate_performance.py \
     --query2doc_dataset_path="${WORKDIR}/data/preprocessed-se/with_synthetic_queries/test.parquet" \
     --additional_corpus_filepaths='["'"${WORKDIR}"'/data/preprocessed-se/with_synthetic_queries/train.parquet", "'"${WORKDIR}"'/data/preprocessed-se/with_synthetic_queries/eval.parquet"]' \

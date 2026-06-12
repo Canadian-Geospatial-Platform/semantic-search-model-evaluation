@@ -1,8 +1,7 @@
 #!/bin/bash
 #SBATCH --export=USER,LOGNAME,HOME,MAIL,PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-#SBATCH --job-name=semantic_finetune_gpu_job
-#SBATCH --output=slurm-logs/%x-%j.out
-#SBATCH --error=slurm-logs/%x-%j.err
+#SBATCH --job-name=semantic_finetune_mpnet_base
+#SBATCH --output=/space/partner/nrcan/geobase/work/oatt/dev/semanticsearch/results/finetune_via_trainer/slurm_logs/%x-%j.out
 #SBATCH --no-requeue
 #SBATCH --qos=low
 #SBATCH --account=nrcan_geobase__gpu_a100
@@ -13,8 +12,10 @@
 #SBATCH --comment="image=registry.maze.science.gc.ca/ssc-hpcs/generic-job:ubuntu22.04"
 
 export WORKDIR="/space/partner/nrcan/geobase/work/oatt/dev/semanticsearch"
-export EXP_NAME="all-mpnet-base-v2-finetune-test"
-export LOGGER_OUTPUT="${WORKDIR}/results/finetune_via_trainer/${EXP_NAME}"
+export MODEL_NAME="all-mpnet-base-v2"
+export MODEL_PATH="sentence-transformers/${MODEL_NAME}"
+export EXP_NAME="finetune-mnrl"
+export LOGGER_OUTPUT="${WORKDIR}/results/finetune_via_trainer/${MODEL_NAME}-baseline/${EXP_NAME}"
 
 export http_proxy=http://webproxy.science.gc.ca:8888/
 export https_proxy=http://webproxy.science.gc.ca:8888/
@@ -25,15 +26,24 @@ mkdir -p $LOGGER_OUTPUT
 source /space/partner/nrcan/geobase/work/oatt/opt/miniconda3/etc/profile.d/conda.sh 
 conda activate semantic-finetune
 
+set -euo pipefail
+
 python code/src/finetune/finetune_via_trainer.py \
     --train_data_path="${WORKDIR}/data/preprocessed-se/with_synthetic_queries/train.parquet" \
     --eval_data_path="${WORKDIR}/data/preprocessed-se/with_synthetic_queries/eval.parquet" \
-    --model_name="sentence-transformers/all-mpnet-base-v2" \
-    --model_save_directory="${WORKDIR}/results/finetune_via_trainer/${EXP_NAME}" \
+    --model_path="${MODEL_PATH}" \
+    --model_save_directory="${LOGGER_OUTPUT}" \
     --data_anchor_column="query_en" \
     --data_doc_column="text_en" \
-    --data_restrict_num_records_to="100" \
-    --train_max_steps="8" \
-    --train_logging_steps="2" \
     --train_losstype="MNRL"
     # --data_mix_languages \  # uncomment to expand dataset for multilingual training
+
+echo Starting evaluation
+python code/src/evaluate_performance.py \
+    --query2doc_dataset_path="${WORKDIR}/data/preprocessed-se/with_synthetic_queries/test.parquet" \
+    --additional_corpus_filepaths='["'"${WORKDIR}"'/data/preprocessed-se/with_synthetic_queries/train.parquet", "'"${WORKDIR}"'/data/preprocessed-se/with_synthetic_queries/eval.parquet"]' \
+    --document_col_names='["text_en", "text_seq", "text_para"]' \
+    --model_path="${LOGGER_OUTPUT}/${MODEL_NAME}" \
+    --save_filedir="${LOGGER_OUTPUT}/performance_evaluation/"
+
+echo Done

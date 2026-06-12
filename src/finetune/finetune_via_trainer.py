@@ -32,7 +32,7 @@ def parse_args():
 
     parser.add_argument("--train_data_path", type=str, required=True, help="Path to the training data in parquet format")
     parser.add_argument("--eval_data_path", type=str, required=True, help="Path to the evaluation data in parquet format")
-    parser.add_argument("--model_name", type=str, required=True, help="Name of the pre-trained model to fine-tune (e.g., 'sentence-transformers/all-MiniLM-L6-v2')")
+    parser.add_argument("--model_path", type=str, required=True, help="Name of the pre-trained model to fine-tune (e.g., 'sentence-transformers/all-MiniLM-L6-v2')")
     parser.add_argument("--model_save_directory", type=str, required=True, help="Directory to save the fine-tuned model")
 
     # configuration
@@ -52,7 +52,7 @@ def parse_args():
 
 
 def main(args):
-    logger.info(f"Starting fine-tuning for {args.model_name}")
+    logger.info(f"Starting fine-tuning for {args.model_path}")
 
     # 1. SETUP
     # Check if the model save directory exists, create if not
@@ -94,12 +94,12 @@ def main(args):
     logger.info(f"Eval data shape: {eval_dataset.shape}")
 
     # 3. INITIALIZE MODEL
-    logger.info(f"Initializing model: {args.model_name}")
-    model = SentenceTransformer(args.model_name)
+    logger.info(f"Initializing model: {args.model_path}")
+    model = SentenceTransformer(args.model_path)
     logger.info("Base model loaded successfully")
 
     # Define output path for model saving
-    model_output_path = os.path.join(args.model_save_directory, args.model_name.split('/')[-1])
+    model_output_path = os.path.join(args.model_save_directory, args.model_path.split('/')[-1])
     logger.info(f"Set up model output path: {model_output_path}")
     
     # 4. INITIALIZE TRAINING ARGUMENTS AND LOSS
@@ -154,7 +154,7 @@ def main(args):
         logger.error(f"Error during fine-tuning: {e}")
         return
     
-    logger.info(f"Finished fine-tuning for {args.model_name}")
+    logger.info(f"Finished fine-tuning for {args.model_path}")
 
     # 6. SAVE MODEL
     try:
