@@ -107,12 +107,12 @@ def main(args):
     logger.info(
         f"Setting up training arguments with {','.join([f'{key}: {value}' for key, value in vars(args).items() if key.startswith('train_')])}"
     )
-    
+
     # MultipleNegativesRankingLoss
     if args.train_losstype == "MNRL":
         train_loss = MultipleNegativesRankingLoss(model)
     elif args.train_losstype == "GIST":
-        train_loss = GISTEmbedLoss(model)
+        train_loss = GISTEmbedLoss(model, model)
     else:
         logger.error(f"Loss type, {args.train_losstype}, is not supported. Please use either 'MNRL' or 'GIST'")
         return
