@@ -46,6 +46,7 @@ def parse_args():
     parser.add_argument("--train_batch_size", type=int, default=32, help="Batch size for training. Default is 32.")
     parser.add_argument("--train_logging_steps", type=int, default=64, help="Number of steps after which to log train loss and eval metrics. Default is 64.")
     parser.add_argument("--train_learning_rate", type=float, default=2e-5, help="Learning rate for training. Default is 2e-5.")
+    parser.add_argument("--train_warmup_steps", type=int, default=0, help="Number of training steps to be used for linear warmup from 0 to learning rate. Default is 0.")
     parser.add_argument("--train_losstype", type=str, default="MNRL", help="Loss function to use for training. Options are 'MNRL' for MultipleNegativesRankingLoss and 'GIST' for GISTEmbedLoss. Default is 'MNRL'.")
 
     return parser.parse_args()
@@ -103,7 +104,7 @@ def main(args):
     logger.info(f"Set up model output path: {model_output_path}")
     
     # 4. INITIALIZE TRAINING ARGUMENTS AND LOSS
-    logger.info(f"Setting up training arguments with loss type: {args.train_losstype}, learning rate: {args.train_learning_rate}, batch size: {args.train_batch_size}, and number of steps: {args.train_max_steps}")
+    logger.info(f"Setting up training arguments with {",".join([f"{key}: {value}" for key, value in vars(args).items() if key.startswith("train_")])}")
     # MultipleNegativesRankingLoss
     if args.train_losstype == "MNRL":
         train_loss = MultipleNegativesRankingLoss(model)
@@ -118,6 +119,7 @@ def main(args):
         max_steps = args.train_max_steps,
         per_device_train_batch_size = args.train_batch_size,
         learning_rate=args.train_learning_rate,
+        warmup_steps=args.train_warmup_steps,
         batch_sampler=BatchSamplers.NO_DUPLICATES,
         logging_strategy="steps",
         logging_steps=args.train_logging_steps,
