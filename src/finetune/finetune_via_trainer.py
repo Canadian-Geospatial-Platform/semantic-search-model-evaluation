@@ -104,7 +104,10 @@ def main(args):
     logger.info(f"Set up model output path: {model_output_path}")
     
     # 4. INITIALIZE TRAINING ARGUMENTS AND LOSS
-    logger.info(f"Setting up training arguments with {",".join([f"{key}: {value}" for key, value in vars(args).items() if key.startswith("train_")])}")
+    logger.info(
+        f"Setting up training arguments with {','.join([f'{key}: {value}' for key, value in vars(args).items() if key.startswith('train_')])}"
+    )
+    
     # MultipleNegativesRankingLoss
     if args.train_losstype == "MNRL":
         train_loss = MultipleNegativesRankingLoss(model)
