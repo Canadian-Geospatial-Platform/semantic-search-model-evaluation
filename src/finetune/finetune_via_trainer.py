@@ -47,6 +47,7 @@ def parse_args():
     parser.add_argument("--train_logging_steps", type=int, default=64, help="Number of steps after which to log train loss and eval metrics. Default is 64.")
     parser.add_argument("--train_learning_rate", type=float, default=2e-5, help="Learning rate for training. Default is 2e-5.")
     parser.add_argument("--train_warmup_steps", type=int, default=0, help="Number of training steps to be used for linear warmup from 0 to learning rate. Default is 0.")
+    parser.add_argument("--max_grad_norm", type=int, default=0, help="Number of training steps to be used for linear warmup from 0 to learning rate. Default is 0.")
     parser.add_argument("--train_losstype", type=str, default="MNRL", help="Loss function to use for training. Options are 'MNRL' for MultipleNegativesRankingLoss and 'GIST' for GISTEmbedLoss. Default is 'MNRL'.")
 
     return parser.parse_args()
@@ -77,11 +78,11 @@ def main(args):
     anchor_col = args.data_anchor_column
     doc_col = args.data_doc_column
 
-    if anchor_col not in train_df.columns or doc_col not in train_df.columns:
-        logger.error(f"Anchor column '{anchor_col}' or document column '{doc_col}' not found in the training data.")
+    if doc_col not in train_df.columns:
+        logger.error(f"Document column '{doc_col}' not found in the training data.")
         return
-    if anchor_col not in eval_df.columns or doc_col not in eval_df.columns:
-        logger.error(f"Anchor column '{anchor_col}' or document column '{doc_col}' not found in the evaluation data.")
+    if doc_col not in eval_df.columns:
+        logger.error(f"Document column '{doc_col}' not found in the evaluation data.")
         return
 
     logger.info(f"Using anchor column: {anchor_col} and document column: {doc_col} for training and evaluation.")
