@@ -47,7 +47,6 @@ def parse_args():
     parser.add_argument("--train_logging_steps", type=int, default=64, help="Number of steps after which to log train loss and eval metrics. Default is 64.")
     parser.add_argument("--train_learning_rate", type=float, default=2e-5, help="Learning rate for training. Default is 2e-5.")
     parser.add_argument("--train_warmup_steps", type=int, default=0, help="Number of training steps to be used for linear warmup from 0 to learning rate. Default is 0.")
-    parser.add_argument("--max_grad_norm", type=int, default=0, help="Number of training steps to be used for linear warmup from 0 to learning rate. Default is 0.")
     parser.add_argument("--train_losstype", type=str, default="MNRL", help="Loss function to use for training. Options are 'MNRL' for MultipleNegativesRankingLoss and 'GIST' for GISTEmbedLoss. Default is 'MNRL'.")
 
     return parser.parse_args()
