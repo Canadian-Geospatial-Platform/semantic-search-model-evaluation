@@ -75,7 +75,7 @@ def main(args):
     
     # loading model
     logger.info(f"Loading model: {args.model_path}")
-    model = SentenceTransformer(args.model_path, trust_remote_code=True)
+    model = SentenceTransformer(args.model_path)
 
     # running performance evaluation
     
