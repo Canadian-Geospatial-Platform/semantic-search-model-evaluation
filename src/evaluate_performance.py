@@ -75,7 +75,9 @@ def main(args):
     
     # loading model
     logger.info(f"Loading model: {args.model_path}")
-    model = SentenceTransformer(args.model_path)
+    
+    isModelLocal = os.path.exists(args.model_path)
+    model = SentenceTransformer(args.model_path, trust_remote_code=isModelLocal, local_files_only=isModelLocal)
 
     # running performance evaluation
     

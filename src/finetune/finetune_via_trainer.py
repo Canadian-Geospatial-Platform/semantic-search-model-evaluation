@@ -96,7 +96,8 @@ def main(args):
 
     # 3. INITIALIZE MODEL
     logger.info(f"Initializing model: {args.model_path}")
-    model = SentenceTransformer(args.model_path)
+    isModelLocal = os.path.exists(args.model_path)
+    model = SentenceTransformer(args.model_path, trust_remote_code=isModelLocal, local_files_only=isModelLocal)
     logger.info("Base model loaded successfully")
 
     # Define output path for model saving
