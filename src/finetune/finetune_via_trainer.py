@@ -34,6 +34,7 @@ def parse_args():
     parser.add_argument("--eval_data_path", type=str, required=True, help="Path to the evaluation data in parquet format")
     parser.add_argument("--model_path", type=str, required=True, help="Name of the pre-trained model to fine-tune (e.g., 'sentence-transformers/all-MiniLM-L6-v2')")
     parser.add_argument("--model_save_directory", type=str, required=True, help="Directory to save the fine-tuned model")
+    parser.add_argument("--model_enforce_max_seq", type=int, default=None, help="Enforce a max sequence length for the text being processed. Must be less than max_position_embeddings. Default is None")
 
     # configuration
     parser.add_argument("--data_anchor_column", type=str, default='query_en', help="Name of the column to use as anchor (query) in training. Default is 'query_en'")
@@ -99,6 +100,9 @@ def main(args):
     isModelLocal = os.path.exists(args.model_path)
     model = SentenceTransformer(args.model_path, trust_remote_code=isModelLocal, local_files_only=isModelLocal)
     logger.info("Base model loaded successfully")
+    if args.model_enforce_max_seq and args.model_enforce_max_seq > 0:
+        logger.info(f"Enforcing max sequence length of: {args.model_enforce_max_seq}")
+        model.max_seq_length = args.model_enforce_max_seq
 
     # Define output path for model saving
     model_output_path = os.path.join(args.model_save_directory, args.model_path.split('/')[-1])
