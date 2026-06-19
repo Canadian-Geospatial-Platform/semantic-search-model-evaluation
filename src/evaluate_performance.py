@@ -26,6 +26,7 @@ def parse_args():
     parser.add_argument("--additional_corpus_filepaths", type=str, default="[]", help="List of filepaths to .parquet that need to be included in corpus consideration")
     parser.add_argument("--document_col_names", type=str, default='["text_en", "text_seq", "text_para"]', help="Column in datasets to be used as document representation. Default is [\"text_en\", \"text_seq\", \"text_para\"]")
     parser.add_argument("--model_path", type=str, required=True, help="Name or local path to model to evaluate")
+    parser.add_argument("--model_enforce_max_seq", type=int, default=None, help="Enforce a max sequence length for the text being processed. Must be less than max_position_embeddings. Default is None")
     parser.add_argument("--save_filedir", type=str, required=True, help="Filepath directory to save evaluation results and corpus embeddings to")
     
     parser.add_argument("--generate_corpus_embeddings", action="store_true", default=False, help="Column in datasets to be used as document representation")
@@ -78,6 +79,10 @@ def main(args):
     
     isModelLocal = os.path.exists(args.model_path)
     model = SentenceTransformer(args.model_path, trust_remote_code=isModelLocal, local_files_only=isModelLocal)
+    
+    if args.model_enforce_max_seq and args.model_enforce_max_seq > 0:
+        logger.info(f"Enforcing max sequence length of: {args.model_enforce_max_seq}")
+        model.max_seq_length = args.model_enforce_max_seq
 
     # running performance evaluation
     
