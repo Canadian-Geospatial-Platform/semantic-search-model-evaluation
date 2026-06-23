@@ -13,14 +13,14 @@
     },
     {
         "model": "paraphrase-multilingual-MiniLM-L12-v2",
-        "training_configs": ["finetune-mnrl", "finetune-mnrl-mix-seq-ms2048", "finetune-gist-mix-para-b64ms1024"]
+        "training_configs": ["finetune-mnrl-en", "finetune-mnrl-mix-seq-ms2048", "finetune-mnrl-mix-para-b64ms1024"]
     },
     {
         "model": "gte-base-en-v1.5",
-        "training_configs": ["finetune-mnrl-b16"]
+        "training_configs": ["finetune-mnrl-sq512ms2048"]
     },
     {
         "model": "gte-multilingual-base",
-        "training_configs": []
+        "training_configs": ["finetune-mnrl-sq512ms2048, finetune-mnrl-mix-seq-sq512, finetune-mnrl-mix-para-sq512"]
     }
 ]
