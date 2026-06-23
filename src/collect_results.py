@@ -42,8 +42,8 @@ def run_generate_model_summary(model, training_configs):
     performance_path = "performance_evaluation/results.csv"
 
     df = generate_model_summary(workdir, training_configs, performance_path)
-    if not df:
-        return None
+    if df is None:
+        return df
     
     df['model'] = model
 
@@ -78,7 +78,7 @@ def main(config_path, save_path):
     print("Done")
 
 if __name__ == "__main__":
-    config_path = "./configs/finetune-via-trainer-best-eval-se.json"
+    config_path = "/space/partner/nrcan/geobase/work/oatt/dev/semanticsearch/code/finetune/configs/finetune-via-trainer-best-eval-se.json"
     save_path = "/space/partner/nrcan/geobase/work/oatt/dev/semanticsearch/results/finetune_via_trainer/summary_on_test.csv"
 
     main(config_path, save_path)
