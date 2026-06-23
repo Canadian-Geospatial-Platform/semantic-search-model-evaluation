@@ -21,6 +21,6 @@
     },
     {
         "model": "gte-multilingual-base",
-        "training_configs": ["finetune-mnrl-sq512ms2048, finetune-mnrl-mix-seq-sq512, finetune-mnrl-mix-para-sq512"]
+        "training_configs": ["finetune-mnrl-sq512ms2048", "finetune-mnrl-mix-seq-sq512", "finetune-mnrl-mix-para-sq512"]
     }
 ]
