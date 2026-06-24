@@ -63,7 +63,7 @@ def main(config_path, save_path):
 
     for model_config in config:
         if not isinstance(model_config['training_configs'], list) or len(model_config['training_configs']) == 0:
-            print(f"Skipping model: {model_config["model"]}. Invalid or empty training_configs to capture.")
+            print(f"Skipping model: {model_config['model']}. Invalid or empty training_configs to capture.")
             continue
         
         df = run_generate_model_summary(model_config['model'], model_config['training_configs'])
