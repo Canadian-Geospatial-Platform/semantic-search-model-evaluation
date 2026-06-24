@@ -1,7 +1,7 @@
 [
     {
         "model": "all-mpnet-base-v2",
-        "training_configs": ["finetune-mnrl-b64"]
+        "training_configs": ["finetune-mnrl-sq512ms2048"]
     },
     {
         "model": "paraphrase-multilingual-mpnet-base-v2",
@@ -9,11 +9,11 @@
     },
     {
         "model": "all-MiniLM-L12-v2",
-        "training_configs": ["finetune-mnrl"]
+        "training_configs": ["finetune-mnrl-sq512ms2048"]
     },
     {
         "model": "paraphrase-multilingual-MiniLM-L12-v2",
-        "training_configs": ["finetune-mnrl-en", "finetune-mnrl-mix-seq-ms2048", "finetune-mnrl-mix-para-b64ms1024"]
+        "training_configs": ["finetune-mnrl-en-sq512ms2048", "finetune-mnrl-mix-seq-sq512ms2048", "finetune-mnrl-mix-para-sq512b64ms2048"]
     },
     {
         "model": "gte-base-en-v1.5",
