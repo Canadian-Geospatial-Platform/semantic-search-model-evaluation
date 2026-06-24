@@ -18,7 +18,7 @@ def extract_dataset(df, query_col, document_col, mix_languages=False):
     subset_df = df[[query_col, document_col]].rename(columns={
         query_col: "anchor",
         document_col: "doc",
-    }).sample(frac=1).reset_index(drop=True)
+    }).sample(frac=1, random_state=42).reset_index(drop=True)
 
     return Dataset.from_pandas(subset_df, preserve_index=False)
 
@@ -38,5 +38,5 @@ def _build_expanded_dataset(df, anchor_col_prefix, doc_col):
     )
 
     combined = pd.concat([df_en, df_fr], ignore_index=True)
-    return Dataset.from_pandas(combined.sample(frac=1), preserve_index=False)
+    return Dataset.from_pandas(combined.sample(frac=1, random_state=42), preserve_index=False)
 
