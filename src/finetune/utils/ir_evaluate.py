@@ -34,7 +34,7 @@ def extract_query_corpus_relevant_docs(dataset, query_col, doc_col, additional_c
     
     for additional_dataset in additional_corpus_datasets:
         for doc_row in additional_dataset:
-            corpus[len(corpus)+1] = doc_row[doc_col]
+            corpus[len(corpus)] = doc_row[doc_col]
     
     return queries, corpus, relevant_docs
 
