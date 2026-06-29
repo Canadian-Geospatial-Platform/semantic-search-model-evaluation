@@ -12,7 +12,7 @@ save_dir = f"{parent_dir}{model_name}/perf_on_benchmark/"
 os.makedirs(save_dir, exist_ok=True)
 
 # scp -J sve000@inter-nrcan-lp-gccloud.science.gc.ca ../geoca_real_eval_updated.xlsx sve000@inter-nrcan-ubuntu2204.science.gc.ca:/space/partner/nrcan/geobase/work/oatt/dev/semanticsearch/data/benchmark/by_geo_theme/query2title_updated.xlsx
-real_eval = pd.read_excel("../geoca_real_eval.xlsx", sheet_name=None)
+real_eval = pd.read_excel("./data/benchmark/by_geo_theme/query2title_updated.xlsx", sheet_name=None)
 print(f"Obtained real queries jsonl")
 
 # convert to df
