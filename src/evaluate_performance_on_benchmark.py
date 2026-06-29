@@ -4,6 +4,7 @@ from finetune.utils.ir_evaluate import extract_query_corpus_relevant_docs
 from finetune.utils.extract_dataset import extract_dataset
 from sentence_transformers.evaluation import InformationRetrievalEvaluator
 from sentence_transformers import SentenceTransformer
+import json
 
 parent_dir = "./results/finetune_via_trainer/"
 model_name = "gte-multilingual-base-baseline"
@@ -36,7 +37,7 @@ print(f"Obtained document corpus: {corpus_df.shape}")
 # link 'related_documents' titles with d_ids
 query2doc = pd.merge(full_df, corpus_df, left_on="related documents", right_on="features_properties_title_en", how="left")
 # dropping all entried with NA i.e. unable to find match in corpus
-query2doc = query2doc.dropna()
+query2doc = query2doc.dropna(subset=["text_seq"])
 print(f"Merged queries to real documents, dropped rows with empty values: {query2doc.shape}")
 
 # removing documents in query2doc from corpus_df to avoid creating duplicates
@@ -50,8 +51,10 @@ queries, corpus, qid2did_mapping = extract_query_corpus_relevant_docs(main_ds, "
 print(f"Acquired queries, corpus, and query to document mapping for IR Evaluator")
 
 # save ds
-corpus.to_parquet(f"{save_dir}/corpus.parquet")
-queries.to_parquet(f"{save_dir}/queries.parquet")
+with open(f"{save_dir}/corpus.parquet", "w") as file:
+    json.dump(corpus, file, indent=4)
+with open(f"{save_dir}/queries.parquet", "w") as file:
+    json.dump(queries, file, indent=4)
 print(f"Saved copy of corpus and queries in {save_dir}")
 
 # load evaluator
