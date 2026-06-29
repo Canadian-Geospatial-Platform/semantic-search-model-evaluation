@@ -40,7 +40,7 @@ query2doc = query2doc.dropna()
 print(f"Merged queries to real documents, dropped rows with empty values: {query2doc.shape}")
 
 # removing documents in query2doc from corpus_df to avoid creating duplicates
-corpus_df = corpus_df[~corpus_df['features_properties_id'].isin(df1['features_properties_id'])]
+corpus_df = corpus_df[~corpus_df['features_properties_id'].isin(query2doc['features_properties_id'])]
 print(f"Fixing corpus to omit related documents from queries dataset: {corpus_df.shape}")
 
 # extract queries and pass to irevaluator for predictions
