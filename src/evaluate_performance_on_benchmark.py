@@ -59,9 +59,9 @@ print(f"Saved copy of corpus and queries in {save_dir}")
 
 # load evaluator
 evaluator = InformationRetrievalEvaluator(
-    queries=eval_queries, #q_id:query
-    corpus=eval_corpus, #d_id:doc
-    relevant_docs=eval_rel_docs, #q_id -> set(d_id)
+    queries=queries, #q_id:query
+    corpus=corpus, #d_id:doc
+    relevant_docs=qid2did_mapping, #q_id -> set(d_id)
     name=f"{query_col}_{doc_col}"
 )
 print(f"Loaded evaluator: {evaluator}")
