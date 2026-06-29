@@ -7,9 +7,9 @@ from sentence_transformers import SentenceTransformer
 import json
 
 parent_dir = "./results/finetune_via_trainer/"
-model_name = "gte-multilingual-base-baseline"
+model_name = "gte-multilingual-base"
 model_ft_config = "finetune-mnrl-mix-seq-sq512"
-save_dir = f"{parent_dir}{model_name}/perf_on_benchmark/"
+save_dir = f"{parent_dir}{model_name}-baseline/perf_on_benchmark/"
 os.makedirs(save_dir, exist_ok=True)
 
 # scp -J sve000@inter-nrcan-lp-gccloud.science.gc.ca ../geoca_real_eval_updated.xlsx sve000@inter-nrcan-ubuntu2204.science.gc.ca:/space/partner/nrcan/geobase/work/oatt/dev/semanticsearch/data/benchmark/by_geo_theme/query2title_updated.xlsx
@@ -62,15 +62,15 @@ evaluator = InformationRetrievalEvaluator(
     queries=queries, #q_id:query
     corpus=corpus, #d_id:doc
     relevant_docs=qid2did_mapping, #q_id -> set(d_id)
-    name=f"{query_col}_{doc_col}"
+    name=f"{parent_dir}{model_name}_{model_ft_config}_performance_on_benchmark"
 )
 print(f"Loaded evaluator: {evaluator}")
 
 # load model
-model_path = f"{parent_dir}{model_name}/{model_ft_config}"
+model_path = f"{parent_dir}{model_name}-baseline/{model_ft_config}/{model_name}"
 print(f"Acquiring model from path {model_path}")
-isModelLocal = os.path.exists(args.model_path)
-model = SentenceTransformer(args.model_path, trust_remote_code=isModelLocal, local_files_only=isModelLocal)
+isModelLocal = os.path.exists(model_path)
+model = SentenceTransformer(model_path, trust_remote_code=isModelLocal, local_files_only=isModelLocal)
 print(f"Loaded model: {model}")
 
 # save predictions
