@@ -7,6 +7,9 @@ from torch.utils.data import Sampler
 logger = logging.getLogger(__name__)
 
 def extract_dataset(df, query_col, document_col, mix_languages=False):
+    '''
+    Shuffles and converts provided DataFrame into a dataset. If mix_langauges is set to True, uses the query_col as a prefix to which it adds "_en" and "_fr" and additionally expands the dataset to include query to doc pairs in both languages.
+    '''
     # if mix languages is True, query col becomes a prefix
     if mix_languages:
         return _build_expanded_dataset(df, anchor_col_prefix=query_col, doc_col=document_col)

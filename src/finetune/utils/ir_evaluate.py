@@ -23,7 +23,7 @@ def extract_query_corpus_relevant_docs(dataset, query_col, doc_col, additional_c
     for idx in range(len(dataset)):
         row = dataset[idx]
         q_id = idx
-        d_id = idx
+        d_id = next((k for k, v in corpus.items() if v == row[doc_col]), len(corpus))
 
         queries[q_id] = row[query_col]
         corpus[d_id] = row[doc_col]
