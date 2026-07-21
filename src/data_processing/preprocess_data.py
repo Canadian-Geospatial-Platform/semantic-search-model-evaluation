@@ -39,7 +39,7 @@ def main():
         'features_properties_description_en','features_properties_description_fr',
         'features_properties_keywords_en','features_properties_keywords_fr','features_properties_eoCollection',
     ]
-    df = df[required_col_list]
+    df = df.reindex(columns=required_col_list)
     logger.info(f"Selected required columns. Dataset shape: {df.shape}")
     
     df = process_data_text_only(df)

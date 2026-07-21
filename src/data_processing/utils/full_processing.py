@@ -7,7 +7,7 @@ from utils.text_normalization import *
 
 logger = logging.getLogger(__name__)
 
-def process_data_text_only(df: pd.DataFrame) -> pd.DataFrame:
+def process_data_text_only(df: pd.DataFrame, remove_dups=True) -> pd.DataFrame:
     affected_col_list = ['features_properties_keywords_en', 'features_properties_keywords_fr']
     logger.info(f"Converting values to lists for columns: {affected_col_list}")
     def convert_to_list(value):
@@ -47,10 +47,11 @@ def process_data_text_only(df: pd.DataFrame) -> pd.DataFrame:
     df = df.dropna(subset=['text_en', 'text_fr'], how='any')
     logger.info(f"Successfully removed missing values. Current shape: {df.shape}")
 
-    logger.info(f"Removing duplicates in dataset.")
-    logger.info(f"Initial shape before deduplication: {df.shape}")
-    df = deduplicate_data(df, subset_columns=['text_en', 'text_fr'])
-    logger.info(f"Dropped duplicates based on text_en, and based on text_fr. Current shape: {df.shape}")
+    if remove_dups:
+        logger.info(f"Removing duplicates in dataset.")
+        logger.info(f"Initial shape before deduplication: {df.shape}")
+        df = deduplicate_data(df, subset_columns=['text_en', 'text_fr'])
+        logger.info(f"Dropped duplicates based on text_en, and based on text_fr. Current shape: {df.shape}")
 
     return df
 
@@ -168,7 +169,7 @@ def process_data_e2e(df: pd.DataFrame, region: str, keep_eoCollections: bool) ->
     
     logger.info("Complete preprocessing disabled. Applying preprocessing for natural language processing and training preparation without feature engineering.")
 
-    df = process_data_text_only(df)
+    df = process_data_text_only(df, remove_dups=False)
 
     if not keep_eoCollections:
         logger.info(f"Removing records with defined eoCollection values. Current shape before removal: {df.shape}")
