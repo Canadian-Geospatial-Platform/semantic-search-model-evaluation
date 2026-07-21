@@ -69,7 +69,7 @@ def process_data_e2e(df: pd.DataFrame, region: str, keep_eoCollections: bool) ->
         'features_properties_sourceSystemName','features_properties_eoCollection',
         'features_properties_eoFilters'
     ]
-    df = df[required_col_list]
+    df = df.reindex(columns=required_col_list)
     logger.info(f"Selected required columns. Dataset shape: {df.shape}")
 
     logger.info("Starting data normalization")
