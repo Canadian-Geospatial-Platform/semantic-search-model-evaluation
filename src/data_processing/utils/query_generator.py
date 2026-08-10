@@ -14,8 +14,11 @@ logger.info(f"Using device: {DEVICE}")
 TOKENIZER = AutoTokenizer.from_pretrained(MODEL_NAME)
 MODEL = AutoModelForSeq2SeqLM.from_pretrained(MODEL_NAME).to(DEVICE)
 
-PREFIXES = ["What is a ", "What is the ", "What is ", "What are ", "What are the "]
+# overused in doc2query outputs; removing to get cleaner queries
+PREFIXES = ["What is a ", "What is the ", "What is ", "What are the ", "What are ",
+            "Est-ce-que ", "Qu'est-ce que", "Quelle est la ", "Quelle est le ", "Quels sont ", "Quelles sont ", "Quel état", "Quelle est "]
 
+KEYWORD_USE = ["keywords", "keyword", "mots-clés associés", "Mots-clés", "Mots-clés"]
 
 def _clean_option(option):
     """Clean generated option by removing common prefixes."""
@@ -23,6 +26,9 @@ def _clean_option(option):
     for prefix in PREFIXES:
         if text.lower().startswith(prefix.lower()):
             text = text[len(prefix):].strip()
+            break
+        if any(keyword in text.lower() for keyword in KEYWORD_USE):
+            text = ""
             break
     return text
 
@@ -55,15 +61,16 @@ def _generate_queries_batch(texts, max_length=64):
             do_sample=True,
             top_p=0.95,
             top_k=10,
-            num_return_sequences=1,
+            num_return_sequences=3,
         )
     
     # Decode and clean (move outputs back to CPU for decoding)
     queries = []
     for idx, output in enumerate(outputs):
         decoded = TOKENIZER.decode(output.cpu(), skip_special_tokens=True)
-        cleaned = _clean_option(decoded)
-        queries.append(cleaned)
+        cleaned = [_clean_option(option).split() for option in decoded]
+        cleaned = max(cleaned, key=len)
+        queries.append(" ".join(cleaned) if cleaned else "")
         
     return queries
 
