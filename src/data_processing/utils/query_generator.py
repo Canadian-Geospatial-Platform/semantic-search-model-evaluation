@@ -52,6 +52,8 @@ def _generate_queries_batch(texts, max_length=64):
         truncation=True,
         max_length=512
     ).to(DEVICE)
+
+    num_return_sequences = 3
     
     with torch.no_grad():
         outputs = MODEL.generate(
@@ -61,14 +63,29 @@ def _generate_queries_batch(texts, max_length=64):
             do_sample=True,
             top_p=0.95,
             top_k=10,
-            num_return_sequences=3,
+            num_return_sequences=num_return_sequences,
         )
     
     # Decode and clean (move outputs back to CPU for decoding)
     queries = []
-    for idx, output in enumerate(outputs):
-        decoded = TOKENIZER.decode(output.cpu(), skip_special_tokens=True)
-        cleaned = [_clean_option(option).split() for option in decoded]
+    batch_size = encoded["input_ids"].shape[0]
+    # outputs shape: (batch_size * num_return_sequences, seq_len)
+    outputs = outputs.view(batch_size, num_return_sequences, -1)
+    # outputs shape: (batch_size, num_return_sequences, seq_len)
+
+    for batch_outputs in outputs:
+        seq_queries = []
+
+        for output in batch_outputs:
+            decoded = TOKENIZER.decode(
+                output.cpu(),
+                skip_special_tokens=True
+            )
+
+            cleaned = _clean_option(decoded)
+            seq_queries.append(cleaned)
+
+        cleaned = [_clean_option(option).split() for option in seq_queries]
         cleaned = max(cleaned, key=len)
         queries.append(" ".join(cleaned) if cleaned else "")
         
