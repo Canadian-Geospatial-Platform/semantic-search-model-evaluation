@@ -12,16 +12,17 @@ models_to_compare = [
     {
         "alias": "gte-multilingual-base-baseline",
         "model_name": "gte-multilingual-base-baseline",
+        "model_ft_config": "gte-multilingual-base"
     },
     {
         "alias": "gte-multilingual-base-finetuned",
         "model_name": "gte-multilingual-base-baseline",
-        "model_ft_config": "finetune-mnrl-mix-seq-sq512"
+        "model_ft_config": "finetune-mnrl-mix-seq-sq512/gte-multilingual-base"
     },
     {
         "alias": "gte-multilingual-base-finetuned-2026_08_11",
         "model_name": "gte-multilingual-base-baseline",
-        "model_ft_config": "2026_08_11/finetune-mnrl-sq1024"
+        "model_ft_config": "2026_08_11/finetune-mnrl-sq1024/gte-multilingual-base"
     },
 ]
 
