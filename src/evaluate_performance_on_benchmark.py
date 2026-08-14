@@ -45,17 +45,14 @@ for model_info in models_to_compare:
     model_ft_config = model_info.get("model_ft_config", "")
     print(f"Evaluating model: {model_name} with config: {model_ft_config}")
 
-    if len(model_ft_config) > 0:
-        model_path = f"{parent_dir}{model_name}/{model_ft_config}/{model_name}"
-    else:
-        model_path = f"{parent_dir}{model_name}/{model_name}"
+    model_path = f"{parent_dir}{model_name}/{model_name}"
     print(f"Acquiring model from path {model_path}")
     isModelLocal = os.path.exists(model_path)
     model = SentenceTransformer(model_path, trust_remote_code=isModelLocal, local_files_only=isModelLocal)
     print(f"Loaded model: {model}")
 
     # Set up save directory for results
-    save_dir = f"{parent_dir}{model_name}{('/' + model_ft_config) if len(model_ft_config) > 0 else ''}/perf_on_benchmark/"
+    save_dir = f"{parent_dir}{model_name}/{model_ft_config}/perf_on_benchmark/"
     os.makedirs(save_dir, exist_ok=True)
 
     # Load benchmark data
