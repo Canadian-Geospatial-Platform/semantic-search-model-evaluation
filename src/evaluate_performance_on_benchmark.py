@@ -58,6 +58,7 @@ for model_info in models_to_compare:
     # Load benchmark data
     for benchmark_file in benchmark_filepaths:
         bm_name = os.path.basename(benchmark_file).split(".")[0]
+        os.makedirs(save_dir+bm_name, exist_ok=True)
         print(f"Loading benchmark data from: {benchmark_file}")
         real_eval = pd.read_excel(benchmark_file, sheet_name=None)
 
@@ -83,11 +84,11 @@ for model_info in models_to_compare:
         print(f"Merged queries to real documents: {query2doc.shape}")
 
         # Remove documents in query2doc from corpus_df to avoid duplicates
-        corpus_df = corpus_df[~corpus_df['features_properties_id'].isin(query2doc['features_properties_id'])]
-        print(f"Fixing corpus to omit related documents from queries dataset: {corpus_df.shape}")
+        corpus_df_copy = corpus_df[~corpus_df['features_properties_id'].isin(query2doc['features_properties_id'])].copy(deep=True)
+        print(f"Fixing corpus to omit related documents from queries dataset: {corpus_df_copy.shape}")
 
         main_ds = extract_dataset(query2doc, 'query', 'text_seq', mix_languages=False)
-        additional_corpus_ds = extract_dataset(corpus_df, "features_properties_id", 'text_seq', mix_languages=False)
+        additional_corpus_ds = extract_dataset(corpus_df_copy, "features_properties_id", 'text_seq', mix_languages=False)
         queries, corpus, qid2did_mapping = extract_query_corpus_relevant_docs(main_ds, "anchor", "doc", [additional_corpus_ds])
         print(f"Acquired queries, corpus, and query to document mapping for IR Evaluator")
 
@@ -117,12 +118,12 @@ for model_info in models_to_compare:
             "recall@3": results[f"{evaluator_name}_cosine_recall@3"]
         })
 
-    print(f"Best recall@3 for each benchmark")
-    best_recall_df = pd.DataFrame(best_recall)
-    best_models = (
-        best_recall_df.loc[
-            best_recall_df.groupby("benchmark_file")["recall@3"].idxmax(),
-            ["benchmark_file", "model", "recall@3"]
-        ].reset_index(drop=True)
-        )
-    print(best_models)
+print(f"Best recall@3 for each benchmark")
+best_recall_df = pd.DataFrame(best_recall)
+best_models = (
+    best_recall_df.loc[
+        best_recall_df.groupby("benchmark_file")["recall@3"].idxmax(),
+        ["benchmark_file", "model", "recall@3"]
+    ].reset_index(drop=True)
+    )
+print(best_models)
