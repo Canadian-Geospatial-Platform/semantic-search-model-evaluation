@@ -57,6 +57,7 @@ for model_info in models_to_compare:
 
     # Load benchmark data
     for benchmark_file in benchmark_filepaths:
+        bm_name = os.path.basename(benchmark_file).split(".")[0]
         print(f"Loading benchmark data from: {benchmark_file}")
         real_eval = pd.read_excel(benchmark_file, sheet_name=None)
 
@@ -98,21 +99,22 @@ for model_info in models_to_compare:
         # print(f"Saved copy of corpus and queries in {save_dir}")
 
         # load evaluator
+        evaluator_name = f"{model_info['alias']}_performance_on_benchmark"
         evaluator = InformationRetrievalEvaluator(
             queries=queries, #q_id:query
             corpus=corpus, #d_id:doc
             relevant_docs=qid2did_mapping, #q_id -> set(d_id)
-            name=f"{model_info['alias']}_performance_on_benchmark"
+            name=evaluator_name
         )
         print(f"Loaded evaluator: {evaluator}")
 
         # save predictions
-        results = evaluator(model, output_path=save_dir)
+        results = evaluator(model, output_path=save_dir+bm_name)
 
         best_recall.append({
             "model": model_info["alias"],
             "benchmark_file": benchmark_file,
-            "recall@3": results['cosine_recall@3']
+            "recall@3": results[f"{evaluator_name}_cosine_recall@3"]
         })
 
     print(f"Best recall@3 for each benchmark")
