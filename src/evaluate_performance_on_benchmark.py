@@ -25,7 +25,7 @@ models_to_compare = [
     },
 ]
 
-# scp -J sve000@inter-nrcan-lp-gccloud.science.gc.ca ../geoca_real_eval_updated.xlsx sve000@inter-nrcan-ubuntu2204.science.gc.ca:/space/partner/nrcan/geobase/work/oatt/dev/semanticsearch/data/benchmark/by_geo_theme/query2title_updated.xlsx
+# scp -J sve000@inter-nrcan-lp-gccloud.science.gc.ca ../geoca_real_eval_updated.xlsx sve000@inter-nrcan-ubuntu2204.science.gc.ca:/space/partner/nrcan/geobase/work/oatt/dev/semanticsearch/data/benchmark/by_geo_theme/query2title_survey_results.xlsx
 benchmark_filepaths = [
     "./data/benchmark/by_geo_theme/query2title_updated.xlsx",
     "./data/benchmark/query2title_survey_results.xlsx",
@@ -104,7 +104,7 @@ for model_info in models_to_compare:
             queries=queries, #q_id:query
             corpus=corpus, #d_id:doc
             relevant_docs=qid2did_mapping, #q_id -> set(d_id)
-            name=f"{model_info["alias"]}_performance_on_benchmark"
+            name=f"{model_info['alias']}_performance_on_benchmark"
         )
         print(f"Loaded evaluator: {evaluator}")
 
