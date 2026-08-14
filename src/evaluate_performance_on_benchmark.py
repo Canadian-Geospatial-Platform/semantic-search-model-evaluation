@@ -112,7 +112,7 @@ for model_info in models_to_compare:
         best_recall.append({
             "model": model_info["alias"],
             "benchmark_file": benchmark_file,
-            "recall@3": results['recall@3']
+            "recall@3": results['cosine_recall@3']
         })
 
     print(f"Best recall@3 for each benchmark")
