@@ -22,7 +22,7 @@ models_to_compare = [
     {
         "alias": "gte-multilingual-base-finetuned-2026_08_11",
         "model_name": "gte-multilingual-base-baseline",
-        "model_ft_config": "2026_08_11/finetune-mnrl-sq1024/gte-multilingual-base"
+        "model_ft_config": "2026_08_11/finetune-mnrl-mix-seq-sq1024/gte-multilingual-base"
     },
 ]
 
