@@ -93,7 +93,7 @@ for model_info in models_to_compare:
         print(f"Acquired queries, corpus, and query to document mapping for IR Evaluator")
 
         # save ds
-        with open(f"{save_dir+bm_name}/corpus.parquet", "w") as file:
+        with open(f"{save_dir+bm_name}/corpus.json", "w") as file:
             json.dump(corpus, file, indent=4)
         # with open(f"{save_dir}/queries.parquet", "w") as file:
         #     json.dump(queries, file, indent=4)
