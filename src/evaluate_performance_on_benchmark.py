@@ -37,6 +37,9 @@ print(f"Obtaining corpus of documents from {corpus_filepath}")
 corpus_df = load_data_and_combine(corpus_filepath)
 print(f"Corpus shape: {corpus_df.shape}")
 
+# Saving corpus
+corpus_df.to_parquet(corpus_filepath+"corpus.parquet", index=False)
+
 # [{model: model_alias, benchmark_file: benchmark file, recall@3: recall_value}, ...]
 best_recall = []
 
@@ -104,7 +107,8 @@ for model_info in models_to_compare:
         evaluator = InformationRetrievalEvaluator(
             queries=queries, #q_id:query
             corpus=corpus, #d_id:doc
-            relevant_docs=qid2did_mapping, #q_id -> set(d_id)
+            relevant_docs=qid2did_mapping, #q_id -> set(d_id).
+            write_predictions=True,
             name=evaluator_name
         )
         print(f"Loaded evaluator: {evaluator}")
