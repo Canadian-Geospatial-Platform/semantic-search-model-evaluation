@@ -8,6 +8,7 @@ from sentence_transformers import (
 )
 from sentence_transformers.losses import MultipleNegativesRankingLoss, GISTEmbedLoss
 from sentence_transformers.training_args import BatchSamplers
+from utils.generate_hard_negatives import add_hard_negatives
 from utils.ir_evaluate import get_ir_evaluator
 import logging
 import sys
@@ -41,6 +42,7 @@ def parse_args():
     parser.add_argument("--data_doc_column", type=str, default='text_en', help="Name of the column to use as document in training. Default is 'features_properties_text_en'")
     parser.add_argument("--data_mix_languages", action="store_true", default=False, help="If set, uses bilingual document expansion for training by treating the specified anchor column as a prefix and looking for corresponding columns with _en and _fr suffixes. The document column is expected to be the same for both languages. By default, this is set to False.")
     parser.add_argument("--data_restrict_num_records_to", type=int, default=None, help="If not None, restricts number of records in training dataset to the number specified")
+    parser.add_argument("--data_mine_hard_negatives", action="store_true", default=False, help="If true, mines hard negatives from the training dataset for training. Default is False.")
     
     # training specific
     parser.add_argument("--train_max_steps", type=int, default=1024, help="Number of steps to run for. Default is 1024.")
@@ -103,6 +105,13 @@ def main(args):
     if args.model_enforce_max_seq and args.model_enforce_max_seq > 0:
         logger.info(f"Enforcing max sequence length of: {args.model_enforce_max_seq}")
         model.max_seq_length = args.model_enforce_max_seq
+
+    # Mine hard negatives if specified (requires model to be loaded first)
+    if args.data_mine_hard_negatives:
+        logger.info("Mining hard negatives from the training dataset")
+        train_dataset = add_hard_negatives(train_dataset, model)
+        logger.info("Hard negatives mined and added to the training dataset")
+        logger.info(f"Shape of training dataset: {train_dataset.shape}")
 
     # Define output path for model saving
     model_output_path = os.path.join(args.model_save_directory, args.model_path.split('/')[-1])
