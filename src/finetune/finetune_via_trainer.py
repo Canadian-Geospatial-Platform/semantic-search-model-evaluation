@@ -43,6 +43,12 @@ def parse_args():
     parser.add_argument("--data_mix_languages", action="store_true", default=False, help="If set, uses bilingual document expansion for training by treating the specified anchor column as a prefix and looking for corresponding columns with _en and _fr suffixes. The document column is expected to be the same for both languages. By default, this is set to False.")
     parser.add_argument("--data_restrict_num_records_to", type=int, default=None, help="If not None, restricts number of records in training dataset to the number specified")
     parser.add_argument("--data_mine_hard_negatives", action="store_true", default=False, help="If true, mines hard negatives from the training dataset for training. Default is False.")
+
+    #configuration for hard negative mining
+    parser.add_argument("--hard_negatives_relative_margin", type=float, default=0.05, help="Relative margin for hard negative mining. Default is 0.05.")
+    parser.add_argument("--hard_negatives_num_negatives", type=int, default=1, help="Number of hard negatives to mine for each anchor. Default is 1.")
+    parser.add_argument("--hard_negatives_sampling_strategy", type=str, default="top", help="Sampling strategy for hard negative mining. Options are 'top' or 'random'. Default is 'top'.")
+    parser.add_argument("--hard_negatives_range_min", type=int, default=0, help="Minimum range for hard negative mining. Default is 0.")
     
     # training specific
     parser.add_argument("--train_max_steps", type=int, default=1024, help="Number of steps to run for. Default is 1024.")
@@ -109,7 +115,8 @@ def main(args):
     # Mine hard negatives if specified (requires model to be loaded first)
     if args.data_mine_hard_negatives:
         logger.info("Mining hard negatives from the training dataset")
-        train_dataset = add_hard_negatives(train_dataset, model)
+        miningkwargs = {k[len("hard_negatives_"):]:v for k,v in vars(args).items() if k.startswith("hard_negatives_")}
+        train_dataset = add_hard_negatives(train_dataset, model, miningkwargs)
         logger.info("Hard negatives mined and added to the training dataset")
         logger.info(f"Shape of training dataset: {train_dataset.shape}")
 
