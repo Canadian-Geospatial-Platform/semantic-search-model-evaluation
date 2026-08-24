@@ -24,6 +24,11 @@ models_to_compare = [
         "model_name": "gte-multilingual-base-baseline",
         "model_ft_config": "2026_08_11/finetune-mnrl-mix-seq-sq1024/gte-multilingual-base"
     },
+    {
+        "alias": "gte-multilingual-base-finetuned-2026_08_11_hn",
+        "model_name": "gte-multilingual-base-baseline",
+        "model_ft_config": "2026_08_11/finetune-hn-mnrl-mix-seq-sq512/gte-multilingual-base"
+    },
 ]
 
 # scp -J sve000@inter-nrcan-lp-gccloud.science.gc.ca ../geoca_real_eval_updated.xlsx sve000@inter-nrcan-ubuntu2204.science.gc.ca:/space/partner/nrcan/geobase/work/oatt/dev/semanticsearch/data/benchmark/by_geo_theme/query2title_survey_results.xlsx
