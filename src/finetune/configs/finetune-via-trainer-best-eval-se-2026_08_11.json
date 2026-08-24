@@ -1,0 +1,6 @@
+[
+    {
+        "model": "gte-multilingual-base",
+        "training_configs": ["finetune-mnrl-mix-seq-sq512", "2026_08_11/finetune-mnrl-mix-seq-sq1024", "2026_08_11/finetune-hn-mnrl-mix-seq-sq512"]
+    }
+]
