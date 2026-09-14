@@ -31,7 +31,7 @@ models_to_compare = [
     },
 ]
 
-# scp -J sve000@inter-nrcan-lp-gccloud.science.gc.ca ../geoca_real_eval_updated.xlsx sve000@inter-nrcan-ubuntu2204.science.gc.ca:/space/partner/nrcan/geobase/work/oatt/dev/semanticsearch/data/benchmark/by_geo_theme/query2title_survey_results.xlsx
+# scp -J <username>@<server> ../geoca_real_eval_updated.xlsx <username>@<server>:/space/partner/nrcan/geobase/work/oatt/dev/semanticsearch/data/benchmark/by_geo_theme/query2title_survey_results.xlsx
 benchmark_filepaths = [
     "./data/benchmark/by_geo_theme/query2title_updated.xlsx",
     "./data/benchmark/query2title_survey_results.xlsx",
