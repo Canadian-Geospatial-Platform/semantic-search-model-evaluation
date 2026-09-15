@@ -19,6 +19,12 @@ def load_data(input_data_dir: str) -> pd.DataFrame:
 
     logger.info(f"Found {len(files)} parquet files. Loading...")
     dfs = [pd.read_parquet(f) for f in files]
+    
+    logger.info(f"Loaded {len(dfs)} datasets.")
+    return dfs, [os.path.basename(f) for f in files]
+
+def load_data_and_combine(input_data_dir: str) -> pd.DataFrame:
+    dfs, _ = load_data(input_data_dir)
     combined_df = pd.concat(dfs, ignore_index=True)
     
     logger.info(f"Done. Combined dataset shape: {combined_df.shape}")
