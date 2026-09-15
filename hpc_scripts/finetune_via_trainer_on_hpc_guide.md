@@ -24,15 +24,19 @@ This guide details the end-to-end process for how finetune-via-trainer was used 
 
 [Special note for General Text Embedding (GTE) models](#special-note-gte-models)
 
+[Setting up Sagemaker proxy for Semantic Search Demo](#setting-up-sagemaker-proxy-for-working-on-semantic-search-demo-webpage)
+
 [Common pitfalls](#common-pitfalls)
 * [Out of space](#out-of-space)
 * [Libtiff Import error on Salloc session](#libtiff-import-error-on-salloc-session)
 * [Torch version upgrade](#torch-version-upgrade)
+* [Why step and epoch may diverge during training](#why-step-and-epoch-mismatchdiverge-with-batchsampler-and-mnrl)
 
 [Theoretical Analysis of Experiments](#theoretical-analysis-of-experiments)
 * [Existing Methodology](#existing-methodology)
-* [New Methodology Implemented](#new-methodologies-implemented)
+* [New Methodologies Implemented](#new-methodologies-implemented)
 * [Stage 2: 2026-08-11](#stage-2-2026-08-11)
+    * [Best configuration](#best-configuration)
 
 ---
 ## Setting up working environment
@@ -376,6 +380,28 @@ export MODEL_PATH="${WORKDIR}/results/finetune_via_trainer/${MODEL_NAME}-baselin
 ```
 ---
 
+## Setting up Sagemaker proxy for working on Semantic search demo webpage
+- Live webpage: https://canadian-geospatial-platform.github.io/semantic-search-demo/
+- Source code: https://github.com/Canadian-Geospatial-Platform/semantic-search-demo
+
+In order to work on the Semantic Search demo, you need to be able to host the webpage locally in an environment that has access to NodeJS and npm. One way to do this is through Sagemaker Jupyter Notebooks:
+
+1. Open the Terminal via New > Terminal.
+2. Run `npm run build` to build all the components of the webpage. This will create a `build` subdirectory.
+3. Navigate inside this subdirectory via `cd build`
+4. Start a server to listen to http requests on the 4173 port. Once that is running, you do not want to close this terminal as that will close the connection to the webpage.
+    ```
+    python3 -m http.server 4173
+    ```
+5.  You can access the website via: 
+    ```
+    https://<notebook_name>.<region>.sagemaker.aws/proxy/4173/
+    ```
+
+When developing the website, you can now just save your changes and run the build command on a separate terminal window and reload the webpage on the url above to test the changes.
+
+Note: Modifying the actual code files (i.e. any `.ts` or `.svelte` files) should be offset to a local editor, as Sagemaker will attempt to create a `.ipynb_checkpoint` once you access the source code files once, which will break the build. You can recover easily by just deleting all the hidden `.ipynb_checkpoint` folders, but working on a local editor and transferring any changes via git avoids this hassle. This is not an issue if you just want to change a config file.
+
 # Common pitfalls
 
 ## Out of space
@@ -418,6 +444,10 @@ Fix through `pip install`. "Conda" installs are no longer supported through offi
     ```
     conda env export > code/src/finetune/environment.yml
     ``` 
+
+## Why step and epoch mismatch/diverge with BatchSampler and MNRL
+
+The sampler constructs batches under a no-duplicates constraint, so it cannot pack the dataset efficiently into fixed-size batches. This leads to more batches per epoch than expected, and since batching is recomputed each epoch, the effective steps-per-epoch can vary slightly, causing the logged epoch values to drift from the naive step-based expectation.
 
 # Theoretical Analysis of Experiments
 ## Existing Methodology
